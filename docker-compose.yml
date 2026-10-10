@@ -1,0 +1,125 @@
+
+name: ihmom-store
+
+services:
+
+  # =========================
+  # PostgreSQL
+  # =========================
+  postgres:
+    image: postgres:17
+    container_name: ihmom-store-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:?DATABASE_USER is required}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      POSTGRES_DB: ${DATABASE_NAME:?DATABASE_NAME is required}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DATABASE_USER:?DATABASE_USER is required} -d ${DATABASE_NAME:?DATABASE_NAME is required}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # =========================
+  # Adminer
+  # =========================
+  adminer:
+    image: adminer:latest
+    container_name: ihmom-store-adminer
+    restart: unless-stopped
+
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # =========================
+  # FastAPI
+  # =========================
+  api:
+    build:
+      context: ./Ihmom-StoreAPI
+      dockerfile: Dockerfile
+
+    container_name: ihmom-store-api
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      # Hot reload for FastAPI source code
+      - ./Ihmom-StoreAPI/app:/app/app
+
+      # Alembic configuration and migrations
+      - ./Ihmom-StoreAPI/alembic.ini:/app/alembic.ini:ro
+      - ./Ihmom-StoreAPI/alembic:/app/alembic
+
+      # Persistent uploaded images
+      - uploads_data:/app/uploads
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    # Apply migrations before starting FastAPI
+    command:
+      - sh
+      - -c
+      - |
+        python -m alembic upgrade head &&
+        exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # =========================
+  # React / Vite
+  # =========================
+  ui:
+    build:
+      context: ./Ihmom-StoreUI
+      dockerfile: Dockerfile
+
+    container_name: ihmom-store-ui
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "5173:5173"
+
+    volumes:
+      # Hot reload for React/Vite source code
+      - ./Ihmom-StoreUI:/app
+
+      # Keep container node_modules separate
+      - /app/node_modules
+
+    depends_on:
+      - api
+
+# =========================
+# Volumes
+# =========================
+volumes:
+  postgres_data:
+  uploads_data:

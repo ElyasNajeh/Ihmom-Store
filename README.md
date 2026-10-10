@@ -6,6 +6,11 @@ Customers can browse products, explore available variants, add items to their ca
 
 The project also includes an admin dashboard for managing store content, products, customers, delivery areas, orders, and business statistics.
 
+## Team Members
+
+- **Backend Developer:** [Elyas Najeh](https://github.com/ElyasNajeh).
+- **Frontend Developer:** [Amjad Qaher](https://github.com/Amjad-Adi).
+
 ## Tech Stack
 
 ### Frontend

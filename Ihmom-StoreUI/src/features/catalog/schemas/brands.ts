@@ -1,0 +1,20 @@
+import { z } from 'zod';
+
+import { TAXONOMY_NAME_MAX_LENGTH } from '@/features/catalog/constants/taxonomy.ts';
+import {
+    atLeastOneField,
+    bilingualTextShape,
+    partialBilingualTextShape,
+} from '@/shared/schemas/shared.ts';
+
+export const createBrandSchema = z
+    .object(bilingualTextShape('name_ar', 'name_en', 'name', TAXONOMY_NAME_MAX_LENGTH))
+    .extend({
+        is_active: z.boolean().default(true),
+    })
+    .strict();
+
+export const updateBrandSchema = atLeastOneField({
+    ...partialBilingualTextShape('name_ar', 'name_en', 'name', TAXONOMY_NAME_MAX_LENGTH),
+    is_active: z.boolean().optional(),
+});

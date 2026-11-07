@@ -21,7 +21,7 @@ export default defineConfig([
     },
     {
         // Vendored shadcn/base-ui primitives co-locate variants, hooks and styles by design.
-        files: ['src/components/ui/**/*.{ts,tsx}'],
+        files: ['src/shared/components/ui/**/*.{ts,tsx}'],
         rules: {
             'react-refresh/only-export-components': 'off',
             'react-hooks/set-state-in-effect': 'off',

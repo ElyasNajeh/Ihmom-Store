@@ -1,29 +1,31 @@
-from datetime import datetime, timezone
+from sqlalchemy import Boolean, Column, Integer, String, true
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String, true
-
+from app.constants.images import IMAGE_PATH_MAX_LENGTH
+from app.constants.sliders import (
+    SLIDER_DEFAULT_DISPLAY_ORDER,
+    SLIDER_TITLE_MAX_LENGTH,
+)
 from app.db.base import Base
+from app.db.mixins import BigIntIdMixin, CreatedAtMixin
 
 
-class Slider(Base):
+class Sliders(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "sliders"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-
     title_ar = Column(
-        String(200),
+        String(SLIDER_TITLE_MAX_LENGTH),
         nullable=False,
     )
 
     title_en = Column(
-        String(200),
+        String(SLIDER_TITLE_MAX_LENGTH),
         nullable=False,
     )
 
     display_order = Column(
         Integer,
-        default=0,
-        server_default="0",
+        default=SLIDER_DEFAULT_DISPLAY_ORDER,
+        server_default=str(SLIDER_DEFAULT_DISPLAY_ORDER),
         nullable=False,
     )
 
@@ -35,12 +37,6 @@ class Slider(Base):
     )
 
     image = Column(
-        String(500),
-        nullable=False,
-    )
-
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        String(IMAGE_PATH_MAX_LENGTH),
         nullable=False,
     )

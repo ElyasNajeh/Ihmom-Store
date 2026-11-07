@@ -1,19 +1,28 @@
+
 from fastapi import HTTPException
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.features.customers.model import Customer
-from app.features.customers.schema import CustomerCreate, CustomerUpdate
+from app.features.customers.schema import (
+    CustomerCreate,
+    CustomerQuery,
+    CustomerSortBy,
+    CustomerUpdate,
+)
 from app.features.orders.model import Order
 from app.shared import crud
+from app.constants.query import SortDirection
 from app.shared.phone import normalize_phone, phone_identity
+from app.shared.search import ilike_any, like_pattern
+from app.shared.sorting import build_order_by
 
 
 SORTABLE_FIELDS = {
-    "id": Customer.id,
-    "created_at": Customer.created_at,
-    "name": Customer.name,
+    CustomerSortBy.ID: Customer.id,
+    CustomerSortBy.CREATED_AT: Customer.created_at,
+    CustomerSortBy.NAME: Customer.name,
 }
 
 
@@ -27,15 +36,6 @@ def _normalize_name(name: str) -> str:
             detail="Customer name cannot exceed 150 characters",
         )
     return value
-
-
-def _escape_search(value: str) -> str:
-    return (
-        value.strip()
-        .replace("\\", "\\\\")
-        .replace("%", "\\%")
-        .replace("_", "\\_")
-    )
 
 
 def find_customer_by_phone(
@@ -71,48 +71,55 @@ def create_customer(db: Session, customer_data: CustomerCreate):
         ) from exc
 
 
-def get_customers(
-    db: Session,
-    page: int,
-    page_size: int,
-    search: str | None,
-    sort_by: str,
-    sort_order: str,
-):
+def get_customers(db: Session, query_data: CustomerQuery):
     query = db.query(Customer)
-    if search and search.strip():
-        search_text = search.strip()
-        term = f"%{_escape_search(search_text)}%"
-        search_filters = [
-            Customer.name.ilike(term, escape="\\"),
-            Customer.phone.ilike(term, escape="\\"),
-        ]
+
+    if query_data.search:
+        search_text = query_data.search
+        search_filters = [ilike_any([Customer.name, Customer.phone], search_text)]
         try:
             normalized_phone = normalize_phone(search_text)
         except ValueError:
             normalized_phone = None
         if normalized_phone and normalized_phone != search_text:
-            normalized_term = f"%{_escape_search(normalized_phone)}%"
-            search_filters.append(
-                Customer.phone.ilike(normalized_term, escape="\\")
-            )
+            normalized_term = like_pattern(normalized_phone)
+            if normalized_term is not None:
+                search_filters.append(
+                    Customer.phone.ilike(normalized_term, escape="\\")
+                )
         query = query.filter(or_(*search_filters))
 
-    sort_column = SORTABLE_FIELDS[sort_by]
-    order_method = sort_column.asc if sort_order == "asc" else sort_column.desc
-    id_order_method = Customer.id.asc if sort_order == "asc" else Customer.id.desc
-    order_by = [order_method()]
-    if sort_by != "id":
-        order_by.append(id_order_method())
+    if query_data.filter:
+        filters = query_data.filter
 
-    return crud.paginate(query, page, page_size, order_by=order_by)
+        if filters.created_at_from is not None:
+            query = query.filter(
+                Customer.created_at >= filters.created_at_from
+            )
+
+        if filters.created_at_to is not None:
+            query = query.filter(
+                Customer.created_at <= filters.created_at_to
+            )
+
+    sort_by = query_data.sort_by or CustomerSortBy.CREATED_AT
+    order = query_data.order or SortDirection.DESC
+
+    return crud.paginate(
+        query,
+        query_data.page,
+        query_data.page_size,
+        order_by=build_order_by(
+            SORTABLE_FIELDS[sort_by],
+            order,
+            Customer.id,
+            sort_is_id=sort_by == CustomerSortBy.ID,
+        ),
+    )
 
 
 def get_customer(db: Session, customer_id: int):
-    customer = crud.get_by_id(db, Customer, customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-    return customer
+    return crud.get_or_404(db, Customer, customer_id, detail="Customer not found")
 
 
 def update_customer(
@@ -120,9 +127,12 @@ def update_customer(
     customer_id: int,
     customer_data: CustomerUpdate,
 ):
-    customer = crud.get_by_id(db, Customer, customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
+    customer = crud.get_or_404(
+        db,
+        Customer,
+        customer_id,
+        detail="Customer not found",
+    )
 
     data = customer_data.model_dump(exclude_unset=True)
     if "name" in data:
@@ -162,9 +172,12 @@ def update_customer(
 
 
 def delete_customer(db: Session, customer_id: int) -> None:
-    customer = crud.get_by_id(db, Customer, customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
+    customer = crud.get_or_404(
+        db,
+        Customer,
+        customer_id,
+        detail="Customer not found",
+    )
 
     if db.query(Order.id).filter(Order.customer_id == customer_id).first():
         raise HTTPException(

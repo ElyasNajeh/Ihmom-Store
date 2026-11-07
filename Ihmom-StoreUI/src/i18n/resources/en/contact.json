@@ -1,0 +1,38 @@
+{
+    "eyebrow": "Come say hello",
+    "title": "Find us. Ask us. We’re here to help.",
+    "description": "Check the details below before visiting, or send a question about products and availability.",
+    "storeInformation": "Store information",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email",
+    "openingHours": "Opening hours",
+    "getDirections": "Get directions",
+    "visitStore": "Visit the store",
+    "mapNote": "Map preview · confirm the pin before launch",
+    "mapTitle": "Map showing the approximate store area",
+    "formTitle": "Send us a message",
+    "formDescription": "Tell us what you’re looking for and how we can reach you.",
+    "nameLabel": "Your name",
+    "namePlaceholder": "Full name",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "messageLabel": "How can we help?",
+    "messagePlaceholder": "Ask about a product, availability, or store information…",
+    "privacyNotice": "This form validates your message and prepares it in your email application. It does not submit to a server or store your information.",
+    "submit": "Prepare message",
+    "emailPrepared": "Your email application should open. You must send the prepared email from that application. If it did not open, email us directly at {{email}}.",
+    "emailSubject": "Ihmom Store inquiry from {{name}}",
+    "emailBody": "Name: {{name}}\nReply email: {{email}}\n\n{{message}}",
+    "validation": {
+        "name": "Enter a valid name.",
+        "email": "Enter a valid email address.",
+        "message": "Enter a message."
+    },
+    "hours": {
+        "saturdayThursday": "Saturday – Thursday",
+        "friday": "Friday",
+        "toBeConfirmed": "9:00 – 18:00",
+        "fridayToBeConfirmed": "Closed"
+    }
+}

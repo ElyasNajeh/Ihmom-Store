@@ -2,23 +2,31 @@ from typing import Annotated
 
 from pydantic import AfterValidator, StringConstraints
 
-
-PHONE_PATTERN = r"^\+(?:970|972)5[0-9]{8}$"
-INTERNATIONAL_MOBILE_PREFIXES = ("+9705", "+9725")
-MOBILE_PREFIXES_WITHOUT_PLUS = ("9705", "9725")
-LOCAL_MOBILE_PREFIX = "05"
+from app.constants.phone import (
+    DEFAULT_COUNTRY_CODE,
+    INTERNATIONAL_MOBILE_PREFIXES,
+    INTERNATIONAL_PHONE_LENGTH,
+    LOCAL_MOBILE_PREFIX,
+    LOCAL_PHONE_LENGTH,
+    MOBILE_PREFIXES_WITHOUT_PLUS,
+    NATIONAL_WITH_COUNTRY_LENGTH,
+)
 
 
 def normalize_phone(phone: str) -> str:
     """Validate and return a phone in canonical international format."""
     value = phone.strip()
 
-    if len(value) == 13 and value.startswith(INTERNATIONAL_MOBILE_PREFIXES):
+    if len(value) == INTERNATIONAL_PHONE_LENGTH and value.startswith(
+        INTERNATIONAL_MOBILE_PREFIXES
+    ):
         normalized = value
-    elif len(value) == 12 and value.startswith(MOBILE_PREFIXES_WITHOUT_PLUS):
+    elif len(value) == NATIONAL_WITH_COUNTRY_LENGTH and value.startswith(
+        MOBILE_PREFIXES_WITHOUT_PLUS
+    ):
         normalized = f"+{value}"
-    elif len(value) == 10 and value.startswith(LOCAL_MOBILE_PREFIX):
-        normalized = f"+970{value[1:]}"
+    elif len(value) == LOCAL_PHONE_LENGTH and value.startswith(LOCAL_MOBILE_PREFIX):
+        normalized = f"{DEFAULT_COUNTRY_CODE}{value[1:]}"
     else:
         raise ValueError(
             "Phone must use +970 or +972 followed by a 9-digit number "

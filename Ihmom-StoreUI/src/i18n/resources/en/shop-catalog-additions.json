@@ -1,0 +1,52 @@
+{
+    "stats": {
+        "sectionLabel": "Store catalogue statistics",
+        "products": "Products to explore",
+        "categories": "Product categories"
+    },
+    "featuredProducts": {
+        "eyebrow": "From our catalogue",
+        "title": "Products worth a closer look.",
+        "description": "Browse a selection of products currently available in the store catalogue.",
+        "viewAll": "Browse all products",
+        "error": "Products are temporarily unavailable. Please try browsing the shop directly.",
+        "emptyTitle": "No products to feature yet",
+        "emptyDescription": "Products will appear here when they are available in the public catalogue.",
+        "browseProduct": "Browse {{name}} in the shop",
+        "noImage": "No image available",
+        "priceFrom": "From"
+    },
+    "categoryShowcase": {
+        "eyebrow": "Browse our world",
+        "title": "Useful things. Different interests.",
+        "description": "Explore the categories currently listed in the store catalogue.",
+        "viewAll": "View all categories",
+        "error": "Categories are temporarily unavailable. You can still browse the shop.",
+        "emptyTitle": "No categories available yet",
+        "emptyDescription": "Categories will appear here when they are published in the catalogue.",
+        "browseCategory": "Browse the {{name}} category",
+        "categoryDescription": "Explore available products in this category.",
+        "exploreCategory": "Explore category",
+        "noImage": "No category image"
+    },
+    "categories": {
+        "phoneAccessories": {
+            "title": "Phone accessories",
+            "description": "Everyday add-ons for charging, protection, and staying connected.",
+            "imageAlt": "Smartphone and accessories on a clean surface",
+            "label": "Stay connected"
+        },
+        "hookahAccessories": {
+            "title": "Hookah accessories",
+            "description": "Explore accessories and useful essentials for your setup.",
+            "imageAlt": "Lifestyle product arrangement",
+            "label": "Setup essentials"
+        },
+        "lifestyleEssentials": {
+            "title": "Lifestyle essentials",
+            "description": "A changing selection of practical accessories for daily use.",
+            "imageAlt": "Minimal everyday accessories",
+            "label": "Made for everyday"
+        }
+    }
+}

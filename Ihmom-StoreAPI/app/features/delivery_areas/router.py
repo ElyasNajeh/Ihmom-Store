@@ -1,6 +1,14 @@
-from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from typing import Annotated
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    Path,
+    Query,
+    Request,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_admin
@@ -10,58 +18,94 @@ from app.features.delivery_areas import service
 from app.features.delivery_areas.schema import (
     DeliveryAreaCreate,
     DeliveryAreaListResponse,
+    DeliveryAreaQuery,
     DeliveryAreaResponse,
+    DeliveryAreaSortBy,
     DeliveryAreaUpdate,
     PublicDeliveryAreaListResponse,
     PublicDeliveryAreaResponse,
 )
+from app.constants.query import SortDirection
+from app.shared.query import QueryRules, parse_query
+
 
 router = APIRouter(prefix="/delivery-areas", tags=["Delivery Areas"])
 
 
+def validate_delivery_area_query(
+    request: Request,
+    page: int = Query(1, ge=1, le=1000),
+    page_size: int = Query(12, ge=1, le=100),
+    search: str | None = Query(None, min_length=1, max_length=150),
+    is_active: bool | None = Query(None, alias="filter[is_active]"),
+    min_delivery_fee: Annotated[
+        str | None,
+        Query(alias="filter[min_delivery_fee]"),
+    ] = None,
+    max_delivery_fee: Annotated[
+        str | None,
+        Query(alias="filter[max_delivery_fee]"),
+    ] = None,
+    sort_by: DeliveryAreaSortBy | None = Query(None),
+    order: SortDirection | None = Query(None),
+) -> DeliveryAreaQuery:
+    return parse_query(
+        request,
+        DeliveryAreaQuery,
+        values={
+            "page": page,
+            "page_size": page_size,
+            "search": search,
+            "sort_by": sort_by,
+            "order": order,
+        },
+        filters={
+            "is_active": is_active,
+            "min_delivery_fee": min_delivery_fee,
+            "max_delivery_fee": max_delivery_fee,
+        },
+        rules=QueryRules.create(
+            declared={
+                "page",
+                "page_size",
+                "search",
+                "filter[is_active]",
+                "filter[min_delivery_fee]",
+                "filter[max_delivery_fee]",
+                "sort_by",
+                "order",
+            },
+            filter_fields={
+                "is_active",
+                "min_delivery_fee",
+                "max_delivery_fee",
+            },
+            sort_order_alias=True,
+        ),
+    )
+
+
 @router.get("/", response_model=PublicDeliveryAreaListResponse)
 def get_active_delivery_areas(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(12, ge=1, le=100),
-    search: str | None = Query(None, max_length=150),
-    sort_by: Literal[
-        "id", "created_at", "name_ar", "name_en", "delivery_fee"
-    ] = Query("name_en"),
-    sort_order: Literal["asc", "desc"] = Query("asc"),
+    query_data: Annotated[
+        DeliveryAreaQuery,
+        Depends(validate_delivery_area_query),
+    ],
     db: Session = Depends(get_db),
 ):
-    return service.get_active_delivery_areas(
-        db,
-        page,
-        page_size,
-        search,
-        sort_by,
-        sort_order,
-    )
+    return service.get_active_delivery_areas(db, query_data)
 
 
 @router.get("/admin/all", response_model=DeliveryAreaListResponse)
 def get_delivery_areas(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(12, ge=1, le=100),
-    search: str | None = Query(None, max_length=150),
-    is_active: bool | None = Query(None),
-    sort_by: Literal[
-        "id", "created_at", "name_ar", "name_en", "delivery_fee"
-    ] = Query("created_at"),
-    sort_order: Literal["asc", "desc"] = Query("desc"),
+    query_data: Annotated[
+        DeliveryAreaQuery,
+        Depends(validate_delivery_area_query),
+    ],
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin),
 ):
-    return service.get_delivery_areas(
-        db,
-        page,
-        page_size,
-        search,
-        is_active,
-        sort_by,
-        sort_order,
-    )
+    return service.get_delivery_areas(db, query_data)
 
 
 @router.get("/admin/{area_id}", response_model=DeliveryAreaResponse)

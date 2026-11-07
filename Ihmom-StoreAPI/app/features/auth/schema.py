@@ -1,13 +1,15 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.constants.admins import ADMIN_USERNAME_MAX_LENGTH
+
 
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(max_length=255)
+    username: str = Field(min_length=1, max_length=ADMIN_USERNAME_MAX_LENGTH)
     password: str = Field(min_length=1)
 
-    @field_validator("email", mode="before")
+    @field_validator("username", mode="before")
     @classmethod
-    def trim_email(cls, value: str) -> str:
+    def trim_username(cls, value: str) -> str:
         return value.strip() if isinstance(value, str) else value
 
 

@@ -1,10 +1,7 @@
-from datetime import datetime, timezone
-
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
     Column,
-    DateTime,
     ForeignKey,
     Index,
     Integer,
@@ -15,15 +12,25 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from app.constants.common import MONEY_DECIMAL_PLACES, MONEY_MAX_DIGITS
+from app.constants.orders import (
+    ORDER_CUSTOMER_NAME_MAX_LENGTH,
+    ORDER_CUSTOMER_PHONE_MAX_LENGTH,
+    ORDER_INITIAL_STATUS,
+    ORDER_NUMBER_MAX_LENGTH,
+    ORDER_STATUS_CHECK_SQL,
+    ORDER_STATUS_COLUMN_LENGTH,
+)
+from app.constants.products import DEFAULT_VARIANT_NAME
 from app.db.base import Base
+from app.db.mixins import BigIntIdMixin, CreatedAtMixin
 
 
-class Order(Base):
+class Order(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "orders"
     __table_args__ = (
         CheckConstraint(
-            "status in ('pending', 'confirmed', 'out_for_delivery', "
-            "'delivered', 'cancelled')",
+            ORDER_STATUS_CHECK_SQL,
             name="ck_orders_status_allowed",
         ),
         CheckConstraint("subtotal >= 0", name="ck_orders_subtotal_nonnegative"),
@@ -36,15 +43,24 @@ class Order(Base):
         Index("ix_orders_status", "status"),
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    order_number = Column(String(50), nullable=False, unique=True)
+    order_number = Column(
+        String(ORDER_NUMBER_MAX_LENGTH),
+        nullable=False,
+        unique=True,
+    )
     customer_id = Column(
         BigInteger,
         ForeignKey("customers.id"),
         nullable=False,
     )
-    customer_name = Column(String(150), nullable=False)
-    customer_phone = Column(String(30), nullable=False)
+    customer_name = Column(
+        String(ORDER_CUSTOMER_NAME_MAX_LENGTH),
+        nullable=False,
+    )
+    customer_phone = Column(
+        String(ORDER_CUSTOMER_PHONE_MAX_LENGTH),
+        nullable=False,
+    )
     delivery_area_id = Column(
         BigInteger,
         ForeignKey("delivery_areas.id"),
@@ -52,23 +68,24 @@ class Order(Base):
     )
     address = Column(Text, nullable=False)
     notes = Column(Text, nullable=True)
-    subtotal = Column(Numeric(10, 2), nullable=False)
+    subtotal = Column(
+        Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
+        nullable=False,
+    )
     delivery_fee = Column(
-        Numeric(10, 2),
+        Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
         default=0,
         server_default=text("0"),
         nullable=False,
     )
-    total = Column(Numeric(10, 2), nullable=False)
-    status = Column(
-        String(30),
-        default="pending",
-        server_default="pending",
+    total = Column(
+        Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
         nullable=False,
     )
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+    status = Column(
+        String(ORDER_STATUS_COLUMN_LENGTH),
+        default=ORDER_INITIAL_STATUS,
+        server_default=ORDER_INITIAL_STATUS,
         nullable=False,
     )
 
@@ -82,7 +99,7 @@ class Order(Base):
     )
 
 
-class OrderItem(Base):
+class OrderItem(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "order_items"
     __table_args__ = (
         CheckConstraint("quantity > 0", name="ck_order_items_quantity_positive"),
@@ -93,7 +110,6 @@ class OrderItem(Base):
         CheckConstraint("total >= 0", name="ck_order_items_total_nonnegative"),
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
     order_id = Column(
         BigInteger,
         ForeignKey("orders.id", ondelete="CASCADE"),
@@ -105,11 +121,12 @@ class OrderItem(Base):
         nullable=False,
     )
     quantity = Column(Integer, nullable=False)
-    unit_price = Column(Numeric(10, 2), nullable=False)
-    total = Column(Numeric(10, 2), nullable=False)
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+    unit_price = Column(
+        Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
+        nullable=False,
+    )
+    total = Column(
+        Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
         nullable=False,
     )
 
@@ -139,6 +156,6 @@ class OrderItem(Base):
     @property
     def _is_default_variant(self) -> bool:
         return (
-            self.product_variant.name_ar == "__default__"
-            and self.product_variant.name_en == "__default__"
+            self.product_variant.name_ar == DEFAULT_VARIANT_NAME
+            and self.product_variant.name_en == DEFAULT_VARIANT_NAME
         )

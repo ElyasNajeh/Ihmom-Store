@@ -1,21 +1,22 @@
-from datetime import datetime, timezone
-
-from sqlalchemy import BigInteger, Column, DateTime, String
+from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 
+from app.constants.customers import (
+    CUSTOMER_NAME_MAX_LENGTH,
+    CUSTOMER_PHONE_MAX_LENGTH,
+)
 from app.db.base import Base
+from app.db.mixins import BigIntIdMixin, CreatedAtMixin
 
 
-class Customer(Base):
+class Customer(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "customers"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    name = Column(String(150), nullable=False)
-    phone = Column(String(30), nullable=False, unique=True)
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+    name = Column(String(CUSTOMER_NAME_MAX_LENGTH), nullable=False)
+    phone = Column(
+        String(CUSTOMER_PHONE_MAX_LENGTH),
         nullable=False,
+        unique=True,
     )
 
     orders = relationship("Order", back_populates="customer")

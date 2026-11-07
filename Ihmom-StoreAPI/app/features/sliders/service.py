@@ -1,62 +1,80 @@
+
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from app.features.sliders.model import Slider
-from app.features.sliders.schema import SliderCreate, SliderUpdate
+from app.features.sliders.model import Sliders
+from app.features.sliders.schema import (
+    SliderCreate,
+    SliderQuery,
+    SliderSortBy,
+    SliderUpdate,
+)
 from app.shared import crud
+from app.constants.images import SLIDER_IMAGE_SUBDIRECTORY
+from app.constants.query import SortDirection
 from app.shared.image_cleanup import delete_unused_uploaded_image
 from app.shared.images import delete_uploaded_image, optimize_slider_upload
+from app.shared.search import ilike_any
+from app.shared.sorting import build_order_by
 
 
 SORTABLE_FIELDS = {
-    "id": Slider.id,
-    "created_at": Slider.created_at,
-    "display_order": Slider.display_order,
-    "title_ar": Slider.title_ar,
-    "title_en": Slider.title_en,
+    SliderSortBy.ID: Sliders.id,
+    SliderSortBy.CREATED_AT: Sliders.created_at,
+    SliderSortBy.DISPLAY_ORDER: Sliders.display_order,
+    SliderSortBy.TITLE_AR: Sliders.title_ar,
+    SliderSortBy.TITLE_EN: Sliders.title_en,
 }
 
 
 def _save_slider_image(file: UploadFile) -> str:
     filename = optimize_slider_upload(file)
-    return f"/uploads/sliders/{filename}"
+    return f"/uploads/{SLIDER_IMAGE_SUBDIRECTORY}/{filename}"
 
 
-def _list_sliders(
+def get_sliders(
     db: Session,
-    page: int,
-    page_size: int,
-    search: str | None,
-    sort_by: str,
-    sort_order: str,
-    is_active: bool | None,
+    query: SliderQuery,
+    is_admin: bool,
 ):
-    query = db.query(Slider)
+    sliders_query = db.query(Sliders)
 
-    if search and search.strip():
-        escaped_search = (
-            search.strip()
-            .replace("\\", "\\\\")
-            .replace("%", "\\%")
-            .replace("_", "\\_")
+    if query.search:
+        search_filter = ilike_any(
+            [Sliders.title_ar, Sliders.title_en],
+            query.search,
         )
-        term = f"%{escaped_search}%"
-        query = query.filter(
-            Slider.title_ar.ilike(term, escape="\\")
-            | Slider.title_en.ilike(term, escape="\\")
+        if search_filter is not None:
+            sliders_query = sliders_query.filter(search_filter)
+
+    if not is_admin:
+        sliders_query = sliders_query.filter(
+            Sliders.is_active.is_(True)
+        )
+    elif query.filter and query.filter.is_active is not None:
+        sliders_query = sliders_query.filter(
+            Sliders.is_active.is_(query.filter.is_active)
         )
 
-    if is_active is not None:
-        query = query.filter(Slider.is_active.is_(is_active))
+    if query.filter and query.filter.display_order is not None:
+        sliders_query = sliders_query.filter(
+            Sliders.display_order == query.filter.display_order
+        )
 
-    sort_column = SORTABLE_FIELDS[sort_by]
-    order_method = sort_column.asc if sort_order == "asc" else sort_column.desc
-    id_order_method = Slider.id.asc if sort_order == "asc" else Slider.id.desc
-    order_by = [order_method()]
-    if sort_by != "id":
-        order_by.append(id_order_method())
+    sort_by = query.sort_by or SliderSortBy.DISPLAY_ORDER
+    order = query.order or SortDirection.ASC
 
-    return crud.paginate(query, page, page_size, order_by=order_by)
+    return crud.paginate(
+        sliders_query,
+        query.page,
+        query.page_size,
+        order_by=build_order_by(
+            SORTABLE_FIELDS[sort_by],
+            order,
+            Sliders.id,
+            sort_is_id=sort_by == SliderSortBy.ID,
+        ),
+    )
 
 
 def create_slider(
@@ -65,74 +83,42 @@ def create_slider(
     file: UploadFile,
 ):
     image = _save_slider_image(file)
-    slider = Slider(**slider_data.model_dump(), image=image)
+    slider = Sliders(**slider_data.model_dump(), image=image)
     db.add(slider)
 
     try:
         db.commit()
     except Exception:
         db.rollback()
-        delete_uploaded_image(image, "sliders")
+        delete_uploaded_image(image, SLIDER_IMAGE_SUBDIRECTORY)
         raise
 
     db.refresh(slider)
     return slider
 
 
-def get_active_sliders(
+def get_slider(
     db: Session,
-    page: int,
-    page_size: int,
-    search: str | None,
-    sort_by: str,
-    sort_order: str,
+    slider_id: int,
+    is_admin: bool,
 ):
-    return _list_sliders(
-        db,
-        page,
-        page_size,
-        search,
-        sort_by,
-        sort_order,
-        is_active=True,
+    slider_query = db.query(Sliders).filter(
+        Sliders.id == slider_id
     )
 
+    if not is_admin:
+        slider_query = slider_query.filter(
+            Sliders.is_active.is_(True)
+        )
 
-def get_sliders(
-    db: Session,
-    page: int,
-    page_size: int,
-    search: str | None,
-    is_active: bool | None,
-    sort_by: str,
-    sort_order: str,
-):
-    return _list_sliders(
-        db,
-        page,
-        page_size,
-        search,
-        sort_by,
-        sort_order,
-        is_active,
-    )
+    slider = slider_query.first()
 
-
-def get_slider(db: Session, slider_id: int):
-    slider = crud.get_by_id(db, Slider, slider_id)
     if not slider:
-        raise HTTPException(status_code=404, detail="Slider not found")
-    return slider
+        raise HTTPException(
+            status_code=404,
+            detail="Slider not found",
+        )
 
-
-def get_active_slider(db: Session, slider_id: int):
-    slider = (
-        db.query(Slider)
-        .filter(Slider.id == slider_id, Slider.is_active.is_(True))
-        .first()
-    )
-    if not slider:
-        raise HTTPException(status_code=404, detail="Slider not found")
     return slider
 
 
@@ -141,9 +127,7 @@ def update_slider(
     slider_id: int,
     slider_data: SliderUpdate,
 ):
-    slider = crud.get_by_id(db, Slider, slider_id)
-    if not slider:
-        raise HTTPException(status_code=404, detail="Slider not found")
+    slider = crud.get_or_404(db, Sliders, slider_id, detail="Slider not found")
 
     data = slider_data.model_dump(exclude_unset=True)
     if not data:
@@ -152,7 +136,7 @@ def update_slider(
     try:
         return crud.update_by_id(
             db,
-            Slider,
+            Sliders,
             slider_id,
             data,
             db_obj=slider,
@@ -167,9 +151,7 @@ def replace_slider_image(
     slider_id: int,
     file: UploadFile,
 ):
-    slider = crud.get_by_id(db, Slider, slider_id)
-    if not slider:
-        raise HTTPException(status_code=404, detail="Slider not found")
+    slider = crud.get_or_404(db, Sliders, slider_id, detail="Slider not found")
 
     new_image = _save_slider_image(file)
     old_image = slider.image
@@ -179,20 +161,24 @@ def replace_slider_image(
         db.commit()
     except Exception:
         db.rollback()
-        delete_uploaded_image(new_image, "sliders")
+        delete_uploaded_image(new_image, SLIDER_IMAGE_SUBDIRECTORY)
         raise
 
     db.refresh(slider)
-    delete_unused_uploaded_image(db, Slider.image, old_image, "sliders")
+    delete_unused_uploaded_image(
+        db,
+        Sliders.image,
+        old_image,
+        SLIDER_IMAGE_SUBDIRECTORY,
+    )
     return slider
 
 
 def delete_slider(db: Session, slider_id: int) -> None:
-    slider = crud.get_by_id(db, Slider, slider_id)
-    if not slider:
-        raise HTTPException(status_code=404, detail="Slider not found")
+    slider = crud.get_or_404(db, Sliders, slider_id, detail="Slider not found")
 
     image = slider.image
+
     try:
         db.delete(slider)
         db.commit()
@@ -200,4 +186,9 @@ def delete_slider(db: Session, slider_id: int) -> None:
         db.rollback()
         raise
 
-    delete_unused_uploaded_image(db, Slider.image, image, "sliders")
+    delete_unused_uploaded_image(
+        db,
+        Sliders.image,
+        image,
+        SLIDER_IMAGE_SUBDIRECTORY,
+    )

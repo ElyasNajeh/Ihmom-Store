@@ -1,13 +1,19 @@
+
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.shared.schema import PageResponse
+from app.constants.sliders import (
+    SLIDER_DEFAULT_DISPLAY_ORDER,
+    SLIDER_TITLE_MAX_LENGTH,
+)
+from app.shared.schema import FilterBase, PageResponse, QueryBase
 
 
 class SliderBase(BaseModel):
-    title_ar: str = Field(min_length=1, max_length=200)
-    title_en: str = Field(min_length=1, max_length=200)
+    title_ar: str = Field(min_length=1, max_length=SLIDER_TITLE_MAX_LENGTH)
+    title_en: str = Field(min_length=1, max_length=SLIDER_TITLE_MAX_LENGTH)
 
     @field_validator("title_ar", "title_en", mode="before")
     @classmethod
@@ -16,7 +22,7 @@ class SliderBase(BaseModel):
 
 
 class SliderCreate(SliderBase):
-    display_order: int = 0
+    display_order: int = SLIDER_DEFAULT_DISPLAY_ORDER
     is_active: bool = True
 
     @field_validator("display_order", mode="before")
@@ -28,8 +34,16 @@ class SliderCreate(SliderBase):
 
 
 class SliderUpdate(BaseModel):
-    title_ar: str | None = Field(default=None, min_length=1, max_length=200)
-    title_en: str | None = Field(default=None, min_length=1, max_length=200)
+    title_ar: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=SLIDER_TITLE_MAX_LENGTH,
+    )
+    title_en: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=SLIDER_TITLE_MAX_LENGTH,
+    )
     display_order: int | None = None
     is_active: bool | None = None
 
@@ -37,7 +51,7 @@ class SliderUpdate(BaseModel):
     @classmethod
     def trim_titles(cls, value: str | None) -> str:
         if value is None:
-            raise ValueError("Slider titles cannot be null")
+            raise ValueError("Sliders titles cannot be null")
         return value.strip() if isinstance(value, str) else value
 
     @field_validator("display_order", mode="before")
@@ -67,6 +81,23 @@ class SliderResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SliderFilter(FilterBase):
+    is_active: bool | None = None
+    display_order: int | None = None
+
+
+class SliderSortBy(str, Enum):
+    ID = "id"
+    CREATED_AT = "created_at"
+    DISPLAY_ORDER = "display_order"
+    TITLE_AR = "title_ar"
+    TITLE_EN = "title_en"
+
+class SliderQuery(QueryBase):
+    filter: SliderFilter | None = None
+    sort_by: SliderSortBy | None = None
 
 
 SliderListResponse = PageResponse[SliderResponse]

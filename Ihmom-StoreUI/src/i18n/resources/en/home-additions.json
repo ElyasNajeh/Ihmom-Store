@@ -1,0 +1,74 @@
+{
+    "highlights": {
+        "eyebrow": "Highlights",
+        "title": "Why you will love shopping here",
+        "description": "Carefully selected products, reliable service, and everyday essentials designed around what you need.",
+        "disclaimer": "Features and policies subject to store updates.",
+        "items": {
+            "categories": {
+                "eyebrow": "Curated Catalog",
+                "title": "Clear categories",
+                "text": "Browse organized selections tailored to make finding what you need fast and straightforward."
+            },
+            "options": {
+                "eyebrow": "Thoughtful Picks",
+                "title": "Dependable options",
+                "text": "Everyday gear and lifestyle essentials that balance practical utility with durable quality."
+            },
+            "support": {
+                "eyebrow": "Direct Help",
+                "title": "Responsive support",
+                "text": "Have questions about a product or order? Reach out anytime and we will guide you."
+            },
+            "local": {
+                "eyebrow": "Local Presence",
+                "title": "Community-focused",
+                "text": "Serving your local community with quick delivery and dependable customer assistance."
+            }
+        }
+    },
+    "whyShop": {
+        "eyebrow": "Why Ihmoom",
+        "title": "Built for your daily convenience",
+        "description": "We take the guesswork out of finding reliable accessories and personal gear.",
+        "contactLink": "Contact our team",
+        "values": {
+            "variety": {
+                "title": "Handpicked variety",
+                "description": "A focused catalog where every item has a clear purpose and standard of quality."
+            },
+            "practicalChoices": {
+                "title": "Practical choices",
+                "description": "Products selected for real everyday use, without unnecessary complexity or inflated prices."
+            },
+            "support": {
+                "title": "Dedicated Support",
+                "description": "Friendly and fast responses to help you with any questions or orders."
+            },
+            "simplerVisit": {
+                "title": "Streamlined Experience",
+                "description": "Clear store details and contact info making it simple and straightforward to reach out."
+            }
+        }
+    },
+    "categories": {
+        "phoneAccessories": {
+            "title": "Phone Accessories",
+            "description": "Reliable chargers, cables, and daily gear for your mobile devices.",
+            "imageAlt": "Phone accessories display",
+            "label": "Mobile Gear"
+        },
+        "hookahAccessories": {
+            "title": "Hookah Accessories",
+            "description": "Essential parts and quality accessories for a refined experience.",
+            "imageAlt": "Hookah accessories display",
+            "label": "Hookah Gear"
+        },
+        "lifestyleEssentials": {
+            "title": "Lifestyle Essentials",
+            "description": "Handy everyday products designed to make your daily routine smoother.",
+            "imageAlt": "Lifestyle essentials display",
+            "label": "Essentials"
+        }
+    }
+}

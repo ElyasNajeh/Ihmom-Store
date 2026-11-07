@@ -1,21 +1,20 @@
-from datetime import datetime, timezone
-
 from sqlalchemy import (
-    BigInteger,
     Boolean,
     CheckConstraint,
     Column,
-    DateTime,
     Numeric,
     String,
     true,
 )
 from sqlalchemy.orm import relationship
 
+from app.constants.common import MONEY_DECIMAL_PLACES, MONEY_MAX_DIGITS
+from app.constants.delivery_areas import DELIVERY_AREA_NAME_MAX_LENGTH
 from app.db.base import Base
+from app.db.mixins import BigIntIdMixin, CreatedAtMixin
 
 
-class DeliveryArea(Base):
+class DeliveryArea(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "delivery_areas"
     __table_args__ = (
         CheckConstraint(
@@ -24,19 +23,24 @@ class DeliveryArea(Base):
         ),
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    name_ar = Column(String(150), nullable=False, unique=True)
-    name_en = Column(String(150), nullable=False, unique=True)
-    delivery_fee = Column(Numeric(10, 2), nullable=False)
+    name_ar = Column(
+        String(DELIVERY_AREA_NAME_MAX_LENGTH),
+        nullable=False,
+        unique=True,
+    )
+    name_en = Column(
+        String(DELIVERY_AREA_NAME_MAX_LENGTH),
+        nullable=False,
+        unique=True,
+    )
+    delivery_fee = Column(
+        Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
+        nullable=False,
+    )
     is_active = Column(
         Boolean,
         default=True,
         server_default=true(),
-        nullable=False,
-    )
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
     orders = relationship("Order", back_populates="delivery_area")

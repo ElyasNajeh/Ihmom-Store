@@ -26,7 +26,7 @@ Unexpected database details are not returned intentionally. Services roll back t
 | `app/db/` | declarative base, engine/session dependency, secure admin bootstrap |
 | `app/features/admins` | admin model, create/list/get/delete rules |
 | `app/features/auth` | login, refresh cookie, logout, current admin |
-| `app/features/categories` | bilingual catalog categories and product delete protection |
+| `app/features/categories` | bilingual catalog categories, images, and product delete protection |
 | `app/features/brands` | bilingual brands and product delete protection |
 | `app/features/sliders` | bilingual promotional sliders and image lifecycle |
 | `app/features/products` | products, internal/simple variants, selectable variants, images |
@@ -40,10 +40,11 @@ Each feature normally contains `model.py`, `schema.py`, `service.py`, and `route
 
 ## Data model
 
-The application has 11 tables:
+The application has 13 tables:
 
 - `admins`: unique username/email and bcrypt password hash.
 - `categories` and `brands`: unique Arabic and English names; each has many products.
+- `category_images`: belongs to one category; a PostgreSQL partial unique index permits at most one primary image per category.
 - `products`: belongs to one category and brand; has variants and images.
 - `product_variants`: belongs to one product; nullable globally unique SKU; price and active state.
 - `product_images`: belongs to one product; a PostgreSQL partial unique index permits at most one primary image per product.
@@ -52,8 +53,9 @@ The application has 11 tables:
 - `orders`: customer and delivery-area references plus customer/address/price snapshots and status.
 - `order_items`: belongs to an order and references the purchased variant; stores quantity and price totals.
 - `sliders`: bilingual titles, ordering, active flag, and upload path.
+- `rate_limit_counters`: fixed-window verification counters keyed by an HMAC digest, window start, count, and expiry.
 
-Product deletion cascades to its variants and images, but is blocked when a variant is referenced by an order item. Order deletion is not exposed; order items cascade only with their parent order. Category, brand, customer, and delivery-area deletion is blocked while referenced. Admin deletion prevents self-deletion and removal of the final administrator.
+Product deletion cascades to its variants and images, but is blocked when a variant is referenced by an order item. Order deletion is not exposed; order items cascade only with their parent order. Category, brand, customer, and delivery-area deletion is blocked while referenced. Deleting an unreferenced category also removes its image rows and stored files. Admin deletion prevents self-deletion and removal of the final administrator.
 
 The product and variant names shown on historical orders are resolved through the retained product/variant relation. Consequently, referenced products/variants cannot be deleted, and later name changes will be reflected in responses/invoices even though money, customer name/phone, address, and delivery-area fee are snapshotted. This is an existing data-model decision, not a separate item-name snapshot column.
 
@@ -85,9 +87,17 @@ JWTs include `sub`, `exp`, `iat`, unique `jti`, and `token_type`. Protected rout
 
 Refresh rotation is stateless. There is no approved token/revocation table or external store, so the previous refresh JWT and a copied token remain cryptographically valid until expiry. Logout clears the browser cookie only. For immediate revocation, reuse detection, or session management, approve and add server-side state in a future design change. Protect `SECRET_KEY`, keep refresh life conservative, and use HTTPS.
 
-## Phone history privacy
+## Guest order-history privacy
 
-`POST /orders/history` intentionally authenticates the lookup only by normalized phone number. It returns order summaries—not customer address, notes, item names, or internal IDs—and sends `Cache-Control: no-store`. This still permits enumeration/abuse by anyone who knows a phone number. The current architecture has no rate-limit store, OTP, or customer accounts. Production must add reverse-proxy/WAF rate limits, monitoring, and suitable privacy disclosure; stronger proof of possession requires an approved product/API change.
+Guest history is no longer keyed by phone alone. `POST /orders/history/verify` requires a phone and the public order number, normalizes the phone with `app/shared/phone.py`, and checks both against the same order row. Failures are indistinguishable (`404` with one generic message), so the endpoint does not reveal whether a phone number or order number exists. Order numbers are `IHM-` plus 144 bits from `secrets.token_urlsafe(18)`; they are already random and non-sequential, so no identifier migration was required. Existing order numbers remain valid because verification reads the stored value.
+
+A successful verification signs a short-lived JWT (`ORDER_HISTORY_TOKEN_EXPIRE_MINUTES`, default 10) with dedicated `aud=order-history`, `purpose=order-history`, and `token_type=order_history` claims plus the canonical phone and verified order number. `GET /orders/history` derives identity only from those claims and returns the one verified order with its customer, delivery, notes, line items, and totals. It accepts no client phone/order selection and cannot expose a customer's other orders. Admin dependencies accept only `token_type=access`, and the history dependency rejects admin tokens. Because the token is proof of the verified phone-plus-order-number combination, it unlocks that single order's full details; a leaked token exposes one order only until it expires.
+
+`GET /orders/history/invoice` uses the same claims to generate the PDF for exactly the verified order, so the guest invoice path reuses `generate_order_invoice` without weakening admin authorization. Checkout additionally returns a token scoped to the just-created order (`history_access_token`, `history_access_token_expires_in`), which lets the success screen offer an immediate invoice download without a second verification request or rate-limit consumption. The token is held in memory only and expires with the normal order-history lifetime.
+
+Verification is protected by distributed, database-backed fixed-window rate limits per IP, per normalized phone, and globally (`app/db/rate_limit.py`, migration `5f4d3c2b1a09`). Bucket keys are HMAC-SHA256 digests with `SECRET_KEY`, so raw IPs and phones are not stored or logged. Windows reset, so there are no permanent account or phone lockouts. Verification and history responses use `Cache-Control: no-store`, including error responses. The per-IP limit uses the ASGI client address; when the API runs behind a reverse proxy, configure trusted forwarded headers so this is the real client address rather than the proxy's.
+
+This design is a knowledge-based mitigation, not customer authentication: an attacker who already knows both the phone number and the order number can still retrieve that single order summary. It does not prove phone ownership and does not add SMS/OTP, customer accounts, or an external auth provider. Use HTTPS, keep `SECRET_KEY` secret, and tune the `ORDER_HISTORY_RATE_*` limits for expected traffic.
 
 ## Upload flow
 
@@ -125,10 +135,10 @@ Application errors normally use `{"detail":"message"}`. Validation errors use Fa
 
 ## Alembic and startup
 
-`alembic/env.py` imports every model so `Base.metadata` is complete and builds its URL from application settings. Type comparison is enabled. The committed initial revision builds all 11 application tables, constraints, indexes, and relationships.
+`alembic/env.py` imports every model so `Base.metadata` is complete and builds its URL from application settings. Type comparison is enabled. The committed initial revision builds the 11 original application tables, constraints, indexes, and relationships; `5f4d3c2b1a09` adds the `rate_limit_counters` verification table.
 
 Both Compose variants wait for the PostgreSQL health check and run `python -m alembic upgrade head && ...uvicorn`. A migration error therefore prevents API startup. Development bind-mounts code/migrations and uses `--reload`; production copies them into the image and does not reload. PostgreSQL and uploads use named volumes.
 
 ## Operational boundaries
 
-The current `/health` endpoint is liveness only. The application does not include distributed rate limiting, token revocation, background queues, stock reservation, customer accounts, payment processing, or observability infrastructure. Those must be deliberate deployment/product decisions, not silently added to this compact backend.
+The current `/health` endpoint is liveness only. The application does not include token revocation, background queues, stock reservation, customer accounts, payment processing, or observability infrastructure. Those must be deliberate deployment/product decisions, not silently added to this compact backend. The only database-backed rate limiting is the guest order-history verification flow; authentication, checkout, and other routes still rely on deployment-level protections.

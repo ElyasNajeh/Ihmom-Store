@@ -1,11 +1,15 @@
+
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import security
 from app.features.admins.model import Admin
-from app.features.admins.schema import AdminCreate
+from app.features.admins.schema import AdminCreate, AdminQuery, AdminSortBy
 from app.shared import crud
+from app.constants.query import SortDirection
+from app.shared.search import ilike_any
+from app.shared.sorting import build_order_by
 
 
 def create_admin(db: Session, admin_data: AdminCreate):
@@ -44,23 +48,38 @@ def create_admin(db: Session, admin_data: AdminCreate):
         ) from exc
 
 
-def get_admins(db: Session, page: int, page_size: int):
+def get_admins(db: Session, query: AdminQuery):
+    admins_query = db.query(Admin)
+
+    search_filter = ilike_any([Admin.username, Admin.email], query.search)
+    if search_filter is not None:
+        admins_query = admins_query.filter(search_filter)
+
+    sort_columns = {
+        AdminSortBy.ID: Admin.id,
+        AdminSortBy.USERNAME: Admin.username,
+        AdminSortBy.CREATED_AT_UTC: Admin.created_at,
+    }
+
+    sort_by = query.sort_by
+    sort_column = sort_columns[sort_by] if sort_by is not None else Admin.id
+
     return crud.paginate(
-        db.query(Admin),
-        page,
-        page_size,
-        order_by=(Admin.id,),
+        admins_query,
+        query.page,
+        query.page_size,
+        order_by=build_order_by(
+            sort_column,
+            query.order or SortDirection.ASC,
+            Admin.id,
+            sort_is_id=sort_by is None or sort_by == AdminSortBy.ID,
+            tie_order=SortDirection.ASC,
+        ),
     )
 
 
 def get_admin(db: Session, admin_id: int):
-    admin = crud.get_by_id(db, Admin, admin_id)
-    if not admin:
-        raise HTTPException(
-            status_code=404,
-            detail="Admin not found",
-        )
-    return admin
+    return crud.get_or_404(db, Admin, admin_id, detail="Admin not found")
 
 
 def delete_admin(

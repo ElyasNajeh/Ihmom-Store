@@ -1,0 +1,12 @@
+SECONDS_PER_DAY = 24 * 60 * 60
+
+TOKEN_TYPE_ACCESS = "access"
+TOKEN_TYPE_REFRESH = "refresh"
+TOKEN_TYPE_BEARER = "bearer"
+
+REFRESH_COOKIE_NAME = "refresh_token"
+REFRESH_COOKIE_PATH = "/auth"
+
+ORDER_HISTORY_AUDIENCE = "order-history"
+ORDER_HISTORY_PURPOSE = "order-history"
+ORDER_HISTORY_TOKEN_TYPE = "order_history"

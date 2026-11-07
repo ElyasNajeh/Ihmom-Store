@@ -1,0 +1,409 @@
+{
+    "shared": {
+        "breadcrumbLabel": "Breadcrumb",
+        "home": "Home",
+        "navLabel": "Customer care sections",
+        "stillNeedHelp": "Still need help?",
+        "stillNeedHelpDescription": "Our team can help with orders, delivery, returns, and product questions.",
+        "contactSupport": "Contact support",
+        "trackOrder": "Track my order",
+        "continueShopping": "Continue shopping",
+        "responseTime": "We usually reply within one business day.",
+        "supportHours": "Support hours: Saturday – Thursday, 9:00 – 18:00."
+    },
+    "nav": {
+        "customerCare": "Customer care",
+        "contact": "Contact us",
+        "delivery": "Delivery information",
+        "returns": "Returns & exchanges",
+        "faq": "FAQs"
+    },
+    "customerCare": {
+        "meta": {
+            "eyebrow": "Customer care",
+            "title": "We’re here to help.",
+            "description": "Find quick answers, delivery details, and return options - or talk to our team directly."
+        },
+        "quickLinks": {
+            "title": "How can we help?",
+            "description": "Choose the topic that matches what you need.",
+            "contact": {
+                "title": "Contact us",
+                "description": "Call, email, or visit the store. Send a message and we’ll get back to you."
+            },
+            "delivery": {
+                "title": "Delivery information",
+                "description": "Check delivery areas, fees, and what to expect on delivery day."
+            },
+            "returns": {
+                "title": "Returns & exchanges",
+                "description": "Check if your item is eligible and learn how to start a return."
+            },
+            "faq": {
+                "title": "FAQs",
+                "description": "Search answers about orders, delivery, returns, and products."
+            }
+        },
+        "popular": {
+            "title": "Popular questions",
+            "description": "The answers customers ask for most."
+        },
+        "track": {
+            "title": "Already placed an order?",
+            "description": "Look up your order history with the phone number you used at checkout.",
+            "cta": "View my orders"
+        },
+        "contactCard": {
+            "title": "Talk to a person",
+            "callCta": "Call the store",
+            "emailCta": "Email us",
+            "hours": "Support hours: Saturday – Thursday, 9:00 – 18:00.",
+            "response": "We usually reply within one business day."
+        }
+    },
+    "contact": {
+        "meta": {
+            "eyebrow": "Contact us",
+            "title": "Get in touch with Ihmom Store.",
+            "description": "Ask about an order, delivery, a return, or a product. Choose the channel that works best for you."
+        },
+        "channels": {
+            "title": "Ways to reach us",
+            "description": "Pick whichever is easiest. Include your order number when you have one.",
+            "call": {
+                "title": "Call us",
+                "description": "Fastest for order updates and delivery questions.",
+                "cta": "Call now"
+            },
+            "email": {
+                "title": "Email us",
+                "description": "Best for details, photos, and order numbers.",
+                "cta": "Send an email"
+            },
+            "visit": {
+                "title": "Visit the store",
+                "description": "See products in person and talk to our team.",
+                "cta": "Get directions"
+            }
+        },
+        "form": {
+            "title": "Send us a message",
+            "description": "Tell us what happened and include your order number if you have one.",
+            "topicLabel": "What is this about?",
+            "topics": {
+                "order": "An order",
+                "delivery": "Delivery",
+                "returns": "A return or exchange",
+                "product": "A product question",
+                "other": "Something else"
+            },
+            "nameLabel": "Your name",
+            "namePlaceholder": "Full name",
+            "emailLabel": "Email address",
+            "emailPlaceholder": "you@example.com",
+            "phoneLabel": "Phone number (optional)",
+            "phonePlaceholder": "+97XXXXXXXXXX",
+            "orderNumberLabel": "Order number (optional)",
+            "orderNumberPlaceholder": "e.g. IHM-10245",
+            "messageLabel": "How can we help?",
+            "messagePlaceholder": "Describe your question or issue. Include dates and item names if relevant.",
+            "privacyNotice": "This form prepares a message in your email application. It does not submit to a server or store your details.",
+            "submit": "Prepare message",
+            "preparedTitle": "Your message is ready to send",
+            "emailPrepared": "Your email application should open with the message filled in. Send it from there. If nothing opened, email us directly at {{email}}.",
+            "sendAnother": "Write another message",
+            "notProvided": "Not provided",
+            "emailSubject": "{{topic}} - inquiry from {{name}}",
+            "emailBody": "Topic: {{topic}}\nName: {{name}}\nReply email: {{email}}\nPhone: {{phone}}\nOrder number: {{orderNumber}}\n\n{{message}}",
+            "messageCount": "{{count}} / {{max}} characters",
+            "location": {
+                "title": "Pin your exact location (optional)",
+                "description": "Tap the map to mark your town, neighborhood, or street. The pin is added to your message so we can confirm delivery and the fee.",
+                "mapLabel": "Map for choosing your delivery location",
+                "hint": "No pin yet - tap the map to place one.",
+                "pinned": "Pinned:",
+                "clear": "Remove pin",
+                "emailLine": "Pinned delivery location: {{lat}}, {{lng}}\nOpen map: {{url}}"
+            },
+            "validation": {
+                "name": "Enter a name with at least 2 characters.",
+                "email": "Enter a valid email address.",
+                "phone": "Enter a valid phone number or leave it empty.",
+                "orderNumber": "Order numbers can be at most 50 characters.",
+                "message": "Describe your question in at least 10 characters."
+            }
+        },
+        "storeInfo": {
+            "title": "Store information",
+            "address": "Address",
+            "phone": "Phone",
+            "email": "Email",
+            "hours": "Opening hours",
+            "directions": "Get directions",
+            "mapTitle": "Map showing the approximate store area"
+        }
+    },
+    "delivery": {
+        "meta": {
+            "eyebrow": "Delivery information",
+            "title": "Delivery, without the guesswork.",
+            "description": "Check whether we deliver to your area, see the fee, and know what happens on delivery day."
+        },
+        "checker": {
+            "title": "Check delivery to your area",
+            "description": "Search for your town or neighborhood to see the current delivery fee.",
+            "searchLabel": "Search delivery areas",
+            "searchPlaceholder": "Start typing an area…",
+            "listLabel": "Delivery areas",
+            "selectPrompt": "Choose an area to see its delivery fee.",
+            "loading": "Loading delivery areas…",
+            "errorTitle": "We couldn’t load delivery areas",
+            "errorDescription": "Check your connection and try again, or contact us to confirm delivery.",
+            "retry": "Try again",
+            "noResults": "No areas match “{{query}}”.",
+            "noResultsDescription": "We may still deliver to you. Contact us with your address and we’ll confirm.",
+            "clear": "Clear search",
+            "resultTitle": "Delivery to {{area}}",
+            "feeLabel": "Delivery fee",
+            "resultNote": "Fees are confirmed again at checkout. The courier will call before arriving.",
+            "areaCount_one": "{{count}} area",
+            "areaCount_other": "{{count}} areas",
+            "contactToConfirm": "Ask about your area"
+        },
+        "process": {
+            "title": "From checkout to your door",
+            "description": "Here is what happens after you place an order.",
+            "steps": {
+                "placed": {
+                    "title": "You place the order",
+                    "description": "Choose your delivery area at checkout and confirm your phone number."
+                },
+                "confirmed": {
+                    "title": "We confirm it",
+                    "description": "Our team checks stock and calls or messages you to confirm the order."
+                },
+                "onTheWay": {
+                    "title": "It’s on the way",
+                    "description": "We pack your items and hand them to the courier for your area."
+                },
+                "delivered": {
+                    "title": "You receive it",
+                    "description": "Check the items with the courier. Keep your order number for any follow-up."
+                }
+            }
+        },
+        "goodToKnow": {
+            "title": "Good to know",
+            "coverage": {
+                "title": "Areas we cover",
+                "description": "The checker above lists every area we currently deliver to. If yours is missing, contact us before ordering."
+            },
+            "timing": {
+                "title": "Delivery timing",
+                "description": "Timing depends on your area and order size. We confirm the expected window when the order is confirmed."
+            },
+            "payment": {
+                "title": "Payment",
+                "description": "Pay in cash on delivery unless the courier tells you otherwise. Keep the exact total ready if possible."
+            },
+            "missed": {
+                "title": "If you’re not home",
+                "description": "The courier will call you. If a second visit is needed, an extra delivery fee may apply."
+            }
+        },
+        "cta": {
+            "title": "Not sure about your area?",
+            "description": "Send us your town and neighborhood and we’ll confirm delivery and the fee.",
+            "button": "Contact us"
+        }
+    },
+    "returns": {
+        "meta": {
+            "eyebrow": "Returns & exchanges",
+            "title": "Returns made simple.",
+            "description": "Check whether your item qualifies, then follow three easy steps to send it back or exchange it."
+        },
+        "checker": {
+            "title": "Check if your item can be returned",
+            "description": "Answer three quick questions. Nothing is sent or stored - the result appears here.",
+            "conditionLabel": "1. What is the item’s condition?",
+            "conditions": {
+                "unused": "Unused, with original packaging",
+                "opened": "Opened or used",
+                "damaged": "Arrived damaged or faulty"
+            },
+            "daysLabel": "2. How long since you received it?",
+            "days": {
+                "under7": "Less than 7 days",
+                "7to14": "7 to 14 days",
+                "over14": "More than 14 days"
+            },
+            "categoryLabel": "3. What did you buy?",
+            "categories": {
+                "electronics": "Electronic device",
+                "hookah": "Hookah or accessories",
+                "lifestyle": "Lifestyle product",
+                "consumable": "Consumable or hygiene item"
+            },
+            "check": "Check eligibility",
+            "reset": "Start over",
+            "resultTitle": "Your result",
+            "eligible": {
+                "title": "This item can be returned",
+                "description": "Contact us within the return window with your order number and a short description of the item."
+            },
+            "conditional": {
+                "title": "This may be returnable",
+                "description": "Because the issue was reported late, our team will review the condition and proof of purchase before deciding."
+            },
+            "notEligible": {
+                "title": "This item can’t be returned",
+                "description": "The item falls outside the policy below. If you think this is a mistake, contact us and we’ll take another look."
+            },
+            "reasons": {
+                "outsideWindow": "The 14-day return window has passed.",
+                "opened": "Opened or used items can’t be returned unless they arrived damaged.",
+                "hygiene": "Consumable and hygiene items can’t be returned once opened.",
+                "damagedLate": "Damage must be reported within 48 hours of delivery."
+            },
+            "contactCta": "Contact us about this item"
+        },
+        "steps": {
+            "title": "How a return works",
+            "contact": {
+                "title": "Contact us",
+                "description": "Send your order number, the item, and the reason for the return."
+            },
+            "pack": {
+                "title": "Pack the item",
+                "description": "Use the original packaging and include everything that came with it."
+            },
+            "handoff": {
+                "title": "Hand it over",
+                "description": "Bring it to the store or arrange a pickup with our team. We’ll inspect it and confirm the refund or exchange."
+            }
+        },
+        "policy": {
+            "title": "Return policy at a glance",
+            "window": {
+                "question": "How long do I have to return an item?",
+                "answer": "Unused items in their original packaging can be returned within 14 days of delivery."
+            },
+            "condition": {
+                "question": "What condition must the item be in?",
+                "answer": "Items must be unused, undamaged, and complete, with packaging, accessories, and receipts included."
+            },
+            "damaged": {
+                "question": "What if the item arrived damaged?",
+                "answer": "Report it within 48 hours with photos of the item and packaging. We’ll arrange a replacement, repair, or refund."
+            },
+            "refund": {
+                "question": "How long do refunds take?",
+                "answer": "After inspection, refunds are issued to the original payment method or as store credit. Cash refunds are handled at the store."
+            }
+        },
+        "nonReturnable": {
+            "title": "Not returnable",
+            "description": "For health and safety reasons, some items can’t be returned once opened.",
+            "items": {
+                "hygiene": "Hygiene and personal-use items",
+                "consumables": "Opened consumables",
+                "innerEar": "In-ear headphones and earbuds",
+                "custom": "Custom or special-order items"
+            }
+        },
+        "cta": {
+            "title": "Ready to start a return?",
+            "description": "Send us your order number and we’ll guide you through it.",
+            "button": "Contact us"
+        }
+    },
+    "faq": {
+        "meta": {
+            "eyebrow": "FAQs",
+            "title": "Answers, in one place.",
+            "description": "Search the most common questions about orders, delivery, returns, and products."
+        },
+        "searchLabel": "Search questions",
+        "searchPlaceholder": "Search for an answer…",
+        "allCategories": "All topics",
+        "categories": {
+            "orders": "Orders",
+            "delivery": "Delivery",
+            "returns": "Returns",
+            "products": "Products"
+        },
+        "resultCount_one": "{{count}} answer",
+        "resultCount_other": "{{count}} answers",
+        "clearSearch": "Clear search",
+        "emptyTitle": "No answers found",
+        "emptyDescription": "Try a different word or choose another topic. Our team can also answer directly.",
+        "emptyCta": "Contact us",
+        "items": {
+            "trackOrder": {
+                "question": "How do I track my order?",
+                "answer": "Open My Orders and enter the phone number you used at checkout. You’ll see each order’s status and totals. If you can’t find it, contact us with your order number."
+            },
+            "cancelOrder": {
+                "question": "Can I cancel my order?",
+                "answer": "You can cancel before the order is out for delivery. Call us as soon as possible. Once the courier has it, the order may no longer be cancellable."
+            },
+            "changeOrder": {
+                "question": "Can I change my order after placing it?",
+                "answer": "Contact us quickly. We can usually adjust items before packing. After dispatch, changes may need to wait until delivery."
+            },
+            "findOrderNumber": {
+                "question": "Where do I find my order number?",
+                "answer": "The order number appears on the confirmation screen after checkout and in My Orders when you look up your phone number."
+            },
+            "deliveryAreas": {
+                "question": "Which areas do you deliver to?",
+                "answer": "The Delivery information page lists every area we currently cover, with its fee. If your area is missing, send us your address and we’ll confirm."
+            },
+            "deliveryTime": {
+                "question": "How long does delivery take?",
+                "answer": "Timing depends on your area and order size. We confirm the expected window when your order is confirmed."
+            },
+            "deliveryFee": {
+                "question": "How much does delivery cost?",
+                "answer": "Each delivery area has its own fee. You’ll see it in the delivery checker and again at checkout before you confirm."
+            },
+            "missedDelivery": {
+                "question": "What happens if I miss the delivery?",
+                "answer": "The courier will call you. If a second visit is needed, an extra delivery fee may apply."
+            },
+            "returnWindow": {
+                "question": "What is the return window?",
+                "answer": "Unused items in their original packaging can be returned within 14 days of delivery."
+            },
+            "startReturn": {
+                "question": "How do I start a return or exchange?",
+                "answer": "Use the eligibility checker on the Returns & exchanges page, then contact us with your order number and reason. We’ll confirm the next step."
+            },
+            "refundTime": {
+                "question": "When will I receive my refund?",
+                "answer": "After we inspect the returned item, refunds are issued to the original payment method or as store credit. Cash refunds are handled at the store."
+            },
+            "damagedItem": {
+                "question": "My item arrived damaged. What should I do?",
+                "answer": "Report it within 48 hours with photos of the item and packaging. We’ll arrange a replacement, repair, or refund."
+            },
+            "stock": {
+                "question": "How do I know if a product is in stock?",
+                "answer": "The shop shows availability for each variant. If an item is unavailable, contact us and we’ll tell you when it’s expected."
+            },
+            "authenticity": {
+                "question": "Are your products original?",
+                "answer": "Yes. We source products from trusted suppliers and only sell items we would use ourselves."
+            },
+            "variants": {
+                "question": "How do I choose the right variant?",
+                "answer": "Open the product, choose the color or size option, then add it to your order. If you’re unsure, message us the item name and we’ll help."
+            },
+            "warranty": {
+                "question": "Do products come with a warranty?",
+                "answer": "Electronic items may include a manufacturer warranty. Keep your receipt and contact us if a product stops working as expected."
+            }
+        }
+    }
+}

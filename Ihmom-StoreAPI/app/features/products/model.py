@@ -1,11 +1,8 @@
-from datetime import datetime, timezone
-
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
     Column,
-    DateTime,
     ForeignKey,
     Index,
     Numeric,
@@ -17,13 +14,20 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+from app.constants.common import MONEY_DECIMAL_PLACES, MONEY_MAX_DIGITS
+from app.constants.images import IMAGE_PATH_MAX_LENGTH
+from app.constants.products import (
+    PRODUCT_NAME_MAX_LENGTH,
+    PRODUCT_SKU_MAX_LENGTH,
+    PRODUCT_VARIANT_NAME_MAX_LENGTH,
+)
 from app.db.base import Base
+from app.db.mixins import BigIntIdMixin, CreatedAtMixin
 
 
-class Product(Base):
+class Product(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "products"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
     category_id = Column(
         BigInteger,
         ForeignKey("categories.id"),
@@ -34,19 +38,14 @@ class Product(Base):
         ForeignKey("brands.id"),
         nullable=False,
     )
-    name_ar = Column(String(200), nullable=False)
-    name_en = Column(String(200), nullable=False)
+    name_ar = Column(String(PRODUCT_NAME_MAX_LENGTH), nullable=False)
+    name_en = Column(String(PRODUCT_NAME_MAX_LENGTH), nullable=False)
     description_ar = Column(Text, nullable=True)
     description_en = Column(Text, nullable=True)
     is_active = Column(
         Boolean,
         default=True,
         server_default=true(),
-        nullable=False,
-    )
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
@@ -66,31 +65,28 @@ class Product(Base):
     )
 
 
-class ProductVariant(Base):
+class ProductVariant(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "product_variants"
     __table_args__ = (
         CheckConstraint("price >= 0", name="ck_product_variants_price_nonnegative"),
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
     product_id = Column(
         BigInteger,
         ForeignKey("products.id", ondelete="CASCADE"),
         nullable=False,
     )
-    name_ar = Column(String(100), nullable=False)
-    name_en = Column(String(100), nullable=False)
-    sku = Column(String(100), nullable=True, unique=True)
-    price = Column(Numeric(10, 2), nullable=False)
+    name_ar = Column(String(PRODUCT_VARIANT_NAME_MAX_LENGTH), nullable=False)
+    name_en = Column(String(PRODUCT_VARIANT_NAME_MAX_LENGTH), nullable=False)
+    sku = Column(String(PRODUCT_SKU_MAX_LENGTH), nullable=True, unique=True)
+    price = Column(
+        Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
+        nullable=False,
+    )
     is_active = Column(
         Boolean,
         default=True,
         server_default=true(),
-        nullable=False,
-    )
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
@@ -98,7 +94,7 @@ class ProductVariant(Base):
     order_items = relationship("OrderItem", back_populates="product_variant")
 
 
-class ProductImage(Base):
+class ProductImage(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "product_images"
     __table_args__ = (
         Index(
@@ -109,22 +105,16 @@ class ProductImage(Base):
         ),
     )
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
     product_id = Column(
         BigInteger,
         ForeignKey("products.id", ondelete="CASCADE"),
         nullable=False,
     )
-    image = Column(String(500), nullable=False)
+    image = Column(String(IMAGE_PATH_MAX_LENGTH), nullable=False)
     is_primary = Column(
         Boolean,
         default=False,
         server_default=false(),
-        nullable=False,
-    )
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 

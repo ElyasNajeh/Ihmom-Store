@@ -1,0 +1,22 @@
+{
+    "hero": {
+        "eyebrow": "About our store",
+        "title": "Accessories and essentials,",
+        "titleEmphasis": "curated with care.",
+        "exploreStore": "Explore the store",
+        "findUs": "Find us & hours",
+        "imageAlt": "Ihmom Store interior and merchandise display",
+        "welcome": "Welcome to",
+        "ourFocus": "Our focus",
+        "focusItems": "Mobile gear & lifestyle goods",
+        "highlights": {
+            "accessories": "Quality everyday accessories",
+            "support": "Reliable customer care"
+        },
+        "bottom": {
+            "accessories": "Carefully selected products",
+            "selection": "Practical essentials for everyday life",
+            "questions": "Questions? Reach out anytime"
+        }
+    }
+}

@@ -3,15 +3,19 @@ from datetime import timedelta
 from fastapi import HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
+from app.constants.auth import (
+    REFRESH_COOKIE_NAME,
+    REFRESH_COOKIE_PATH,
+    SECONDS_PER_DAY,
+    TOKEN_TYPE_ACCESS,
+    TOKEN_TYPE_BEARER,
+    TOKEN_TYPE_REFRESH,
+)
 from app.core.config import settings
 from app.core.security import create_token, verify_password, verify_token
 from app.features.admins.model import Admin
 from app.features.auth.schema import LoginRequest
 from app.shared import crud
-
-
-REFRESH_COOKIE_NAME = "refresh_token"
-REFRESH_COOKIE_PATH = "/auth"
 
 
 def _validate_cookie_request_origin(request: Request) -> None:
@@ -36,7 +40,7 @@ def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
         httponly=True,
         secure=settings.COOKIE_SECURE,
         samesite=settings.COOKIE_SAMESITE,
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * SECONDS_PER_DAY,
         path=REFRESH_COOKIE_PATH,
     )
 
@@ -56,8 +60,8 @@ def login(
     login_data: LoginRequest,
     response: Response,
 ):
-    email = str(login_data.email).lower()
-    admin = db.query(Admin).filter(Admin.email == email).first()
+    username = login_data.username.strip()
+    admin = db.query(Admin).filter(Admin.username == username).first()
 
     if not admin or not verify_password(
         login_data.password,
@@ -65,19 +69,19 @@ def login(
     ):
         raise HTTPException(
             status_code=401,
-            detail="Invalid email or password",
+            detail="Invalid username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     access_token = create_token(
         {"sub": str(admin.id)},
         timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        token_type="access",
+        token_type=TOKEN_TYPE_ACCESS,
     )
     refresh_token = create_token(
         {"sub": str(admin.id)},
         timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-        token_type="refresh",
+        token_type=TOKEN_TYPE_REFRESH,
     )
     _set_refresh_cookie(response, refresh_token)
 
@@ -85,7 +89,7 @@ def login(
         "message": "Login successful",
         "username": admin.username,
         "access_token": access_token,
-        "token_type": "bearer",
+        "token_type": TOKEN_TYPE_BEARER,
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     }
 
@@ -107,7 +111,7 @@ def refresh_access_token(
 
     subject = verify_token(
         refresh_token,
-        expected_token_type="refresh",
+        expected_token_type=TOKEN_TYPE_REFRESH,
     )
     if subject is None:
         raise HTTPException(
@@ -132,19 +136,19 @@ def refresh_access_token(
     new_access_token = create_token(
         {"sub": str(admin.id)},
         timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        token_type="access",
+        token_type=TOKEN_TYPE_ACCESS,
     )
     new_refresh_token = create_token(
         {"sub": str(admin.id)},
         timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-        token_type="refresh",
+        token_type=TOKEN_TYPE_REFRESH,
     )
     _set_refresh_cookie(response, new_refresh_token)
 
     return {
         "message": "Access token refreshed",
         "access_token": new_access_token,
-        "token_type": "bearer",
+        "token_type": TOKEN_TYPE_BEARER,
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     }
 

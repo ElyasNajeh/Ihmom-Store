@@ -45,7 +45,7 @@ Common statuses are `400` invalid workflow/file, `401` invalid or missing authen
 
 | Method/path | Access | Input | Success | Errors/rules |
 | --- | --- | --- | --- | --- |
-| `POST /auth/login` | Public | JSON `email` (valid, ≤255, trimmed/lowercased), `password` (non-empty) | `200 LoginResponse`; sets refresh cookie | `401` uses one generic invalid-credential message; `422` malformed body. |
+| `POST /auth/login` | Public | JSON `username` (1–100, trimmed), `password` (non-empty) | `200 LoginResponse`; sets refresh cookie | `401` uses one generic invalid-credential message; `422` malformed body. |
 | `POST /auth/refresh` | Refresh cookie | No body; cookie and, for browsers, allowed `Origin` | `200 RefreshResponse`; replaces refresh cookie | `401` missing/invalid/expired token or removed admin; `403` Origin mismatch. Refresh tokens cannot be Bearer access tokens. |
 | `POST /auth/logout` | Public/cookie | No body; allowed `Origin` | `200 {"message":"Logged out successfully"}`; expires cookie | Idempotent; `403` Origin mismatch. Clearing a cookie cannot revoke an already copied stateless JWT. |
 | `GET /auth/me` | Admin | Bearer access token | `200 {id,username,email}` | `401` missing/invalid/expired/wrong-type token or removed admin. |
@@ -56,7 +56,7 @@ Login:
 POST /auth/login
 Content-Type: application/json
 
-{"email":"admin@example.com","password":"correct horse battery staple"}
+{"username":"store_admin","password":"correct horse battery staple"}
 ```
 
 ```json
@@ -86,7 +86,7 @@ Create example: `{"username":"ops_admin","email":"ops@example.com","password":"S
 
 ## Categories and brands
 
-Both resources use `{id,name_ar,name_en,is_active,created_at}`. Names are independently unique, trimmed, required, non-null, and 1–100 characters. Create accepts `is_active` (default `true`); PATCH accepts any subset but rejects explicit null. Public reads contain active records only.
+Both resources use `{id,name_ar,name_en,is_active,created_at}`. Names are independently unique, trimmed, required, non-null, and 1–100 characters. Create accepts `is_active` (default `true`); PATCH accepts any subset but rejects explicit null. Public reads contain active records only. Categories additionally embed `images: CategoryImageResponse[]` (`{id,category_id,image,is_primary,created_at}`).
 
 ### Categories
 
@@ -98,7 +98,18 @@ Both resources use `{id,name_ar,name_en,is_active,created_at}`. Names are indepe
 | `POST /categories/` | Admin | JSON `{name_ar,name_en,is_active?}` | `201 CategoryResponse` | `409` either duplicate name. |
 | `GET /categories/{category_id}` | Public | Positive ID | `200 CategoryResponse` | `404` missing or inactive. |
 | `PATCH /categories/{category_id}` | Admin | Partial category JSON | `200 CategoryResponse` | `404`; `409` duplicate; `422` empty/null/long name. |
-| `DELETE /categories/{category_id}` | Admin | Positive ID | `204` | `404`; `409` if any product, active or inactive, references it. |
+| `DELETE /categories/{category_id}` | Admin | Positive ID | `204` | `404`; `409` if any product, active or inactive, references it. Otherwise image rows and stored files are removed. |
+
+### Category images
+
+| Method/path | Access | Input | Success | Errors/rules |
+| --- | --- | --- | --- | --- |
+| `GET /categories/{category_id}/images` | Admin | Positive category ID | `200 CategoryImageResponse[]` | `404` category. |
+| `POST /categories/{category_id}/images` | Admin | multipart repeated field `files` containing one or more images | `201 CategoryImageResponse[]` | Converts to WebP; first image becomes primary if none exists; `400` empty/corrupt/unsafe; `404`; transaction/file compensation on failure. |
+| `PATCH /categories/{category_id}/images/{image_id}/set-primary` | Admin | Positive IDs, no body | `200 CategoryImageResponse` | Atomically clears prior primary; `404` category/image. |
+| `DELETE /categories/{category_id}/images/{image_id}` | Admin | Positive IDs | `204` | Removes the file; promotes another image when required; `404`. |
+
+Category images are stored as `/uploads/categories/<uuid>.webp`. The same partial unique index pattern used for products allows at most one primary image per category.
 
 ### Brands
 
@@ -120,7 +131,7 @@ Create example and paginated response:
 
 ```json
 {
-  "items": [{"id":1,"name_ar":"العناية بالبشرة","name_en":"Skin Care","is_active":true,"created_at":"2026-10-10T09:00:00Z"}],
+  "items": [{"id":1,"name_ar":"العناية بالبشرة","name_en":"Skin Care","is_active":true,"created_at":"2026-10-10T09:00:00Z","images":[]}],
   "total": 1,
   "page": 1,
   "page_size": 12,
@@ -297,17 +308,30 @@ Success is `201 CheckoutOrderResponse`:
   "items": [{"product_name_ar":"غسول لطيف","product_name_en":"Gentle Cleanser","variant_name_ar":null,"variant_name_en":null,"quantity":2,"unit_price":"29.90","total":"59.80"}],
   "subtotal": "59.80",
   "delivery_fee": "10.00",
-  "total": "69.80"
+  "total": "69.80",
+  "history_access_token": "eyJ...",
+  "history_access_token_expires_in": 600
 }
 ```
 
 The server loads active products/variants/category/brand/delivery area and computes prices/totals; it accepts no client price. Unavailable catalog/area data and invalid/overflowing values return `422`; transaction race/conflict conditions return `409`. The entire checkout is atomic.
 
-### Public order history
+`history_access_token` is a short-lived order-history token scoped to the order that was just created. The client can use it to download the invoice immediately without another verification round trip. Keep it in memory only; it expires after `history_access_token_expires_in` seconds (default 600).
 
-`POST /orders/history?page=1&page_size=12` is public with JSON `{"phone":"0591234567"}`. It returns `200 PageResponse<OrderHistoryItemResponse>` and `Cache-Control: no-store`. Each item is `{order_number,status,created_at,total_quantity,subtotal,delivery_fee,total}`; it intentionally excludes address, customer name, notes, line items, and database IDs. Equivalent phone formats normalize to the same customer identity. No results produce an empty page. Invalid phones/pagination return `422`.
+### Guest order history
 
-This phone-only flow is privacy-sensitive and should be deployment-rate-limited. There is no `/orders/track` endpoint.
+Order history uses two steps and never trusts a phone number on its own.
+
+`POST /orders/history/verify` accepts JSON `{"phone":"0591234567","order_number":"IHM-..."}`. It normalizes the phone with the shared phone utilities, finds the order by its public `order_number`, and confirms that the stored customer phone matches. A success returns `200 {"access_token":"...","token_type":"Bearer","expires_in":600}` with `Cache-Control: no-store`. The token is a short-lived JWT (default 10 minutes) with dedicated `aud=order-history`, `purpose=order-history`, and `token_type=order_history` claims; its `sub` is the canonical `+970`/`+972` phone and it also names the verified order. Results are identical for every failure: a wrong phone, an unknown order number, and a phone with no orders all return `404 {"detail":"Order details could not be verified"}`, so the endpoint does not disclose what exists. Invalid input returns `422`. Excess attempts return `429` with `Retry-After`.
+
+`GET /orders/history` requires `Authorization: Bearer <order-history token>` and returns exactly the single order named in the token: `200 OrderHistoryItemResponse` = `{order_number,status,created_at,customer_name,customer_phone,delivery_area_name_ar,delivery_area_name_en,address,notes,total_quantity,items,subtotal,delivery_fee,total}`, where each item is `{product_name_ar,product_name_en,variant_name_ar,variant_name_en,quantity,unit_price,total}`. The verified order is returned in full so the customer can review contact, delivery, notes, and line items for that order; it excludes internal database IDs. The client cannot select a phone or another order; both are derived from the signed token, so the token only unlocks the one order it was issued for. Missing, expired, tampered, or wrong-audience/purpose/type tokens return `401`. The former phone-only `POST /orders/history` now returns `405`.
+
+`GET /orders/history/invoice` uses the same order-history token and returns the PDF invoice for exactly the verified order: `200 application/pdf` with `Content-Disposition: attachment; filename="ihmom-store-invoice-<order_number>.pdf"` and `Cache-Control: private, no-store`. It accepts no order selection parameters; the optional `lang=en|ar` query parameter selects the invoice language (default `en`). The invoice mirrors the storefront order fields: order number, status, date, customer name/phone, delivery area, address, notes, line items with localized product/variant names and the default-variant label, subtotal, delivery, and total. Missing, expired, tampered, admin, or wrong-scope tokens return `401`; an order that no longer exists returns `404`. The checkout response includes a token so the browser can offer an immediate download without asking the customer to verify again.
+
+Verification is rate limited per IP, per normalized phone, and globally through PostgreSQL fixed-window counters. Bucket keys are HMAC-SHA256 digests, so raw phone numbers and IP addresses are never stored. Windows reset (default five minutes), so there is no permanent account or phone lockout. There is no `/orders/track` endpoint.
+
+Phone-plus-order-number knowledge is a knowledge-based mitigation, not proof of phone ownership or strong customer authentication.
+
 
 ### Admin order endpoints
 
@@ -319,7 +343,7 @@ This phone-only flow is privacy-sensitive and should be deployment-rate-limited.
 | `GET /orders/admin/{order_id}` | Admin | Positive ID | `200 OrderResponse` | `404`. |
 | `GET /orders/admin/{order_id}/items` | Admin | Positive ID | `200 OrderItemResponse[]` | `404` order. |
 | `PATCH /orders/admin/{order_id}/status` | Admin | JSON `{status}` using allowed enum | `200 OrderResponse` | `404` missing; `409` invalid lifecycle transition/concurrent conflict; `422` invalid enum/extra field. |
-| `GET /orders/admin/{order_id}/invoice` | Admin | Positive ID | `200 application/pdf` download; private/no-store | Filename `ihmom-store-invoice-<order_number>.pdf`; `404`; sanitized `500` when Arabic font unavailable. |
+| `GET /orders/admin/{order_id}/invoice` | Admin | Positive ID; optional `lang=en\|ar` (default `en`) | `200 application/pdf` download; private/no-store | Filename `ihmom-store-invoice-<order_number>.pdf`; `404`; sanitized `500` when no Unicode font is available. |
 
 Status example: `{"status":"confirmed"}`. Invoice clients must request a blob, not JSON.
 

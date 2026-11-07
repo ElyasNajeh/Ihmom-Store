@@ -1,6 +1,7 @@
 from collections.abc import Mapping, Sequence
 from typing import Any, TypeVar
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Query, Session
 
 
@@ -13,6 +14,48 @@ def get_by_id(
     record_id: Any,
 ) -> ModelType | None:
     return db.query(model).filter(model.id == record_id).first()
+
+
+def get_or_404(
+    db: Session,
+    model: type[ModelType],
+    record_id: Any,
+    *,
+    detail: str | None = None,
+    options: Sequence[Any] = (),
+) -> ModelType:
+    query = db.query(model)
+    if options:
+        query = query.options(*options)
+
+    obj = query.filter(model.id == record_id).first()
+    if obj is None:
+        raise HTTPException(
+            status_code=404,
+            detail=detail or f"{model.__name__} not found",
+        )
+    return obj
+
+
+def get_locked_or_404(
+    db: Session,
+    model: type[ModelType],
+    record_id: Any,
+    *,
+    detail: str | None = None,
+) -> ModelType:
+    obj = (
+        db.query(model)
+        .filter(model.id == record_id)
+        .with_for_update()
+        .first()
+    )
+    if obj is None:
+        raise HTTPException(
+            status_code=404,
+            detail=detail or f"{model.__name__} not found",
+        )
+    return obj
 
 
 def paginate(

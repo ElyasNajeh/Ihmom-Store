@@ -1,0 +1,105 @@
+{
+    "shop": {
+        "eyebrow": "هموم ستور",
+        "title": "تسوّق جميع المنتجات",
+        "description": "تصفّح المنتجات واستخدم خيارات التصفية للوصول إلى ما تحتاجه.",
+        "loadingCount": "جارٍ تحميل المنتجات…",
+        "productCount_zero": "لا توجد منتجات",
+        "productCount_one": "منتج واحد",
+        "productCount_two": "منتجان",
+        "productCount_few": "{{count}} منتجات",
+        "productCount_many": "{{count}} منتجًا",
+        "productCount_other": "{{count}} منتج",
+        "searchPlaceholder": "ابحث عن المنتجات…",
+        "searchLabel": "البحث عن المنتجات",
+        "clearSearch": "مسح البحث",
+        "categories": {
+            "title": "تسوّق حسب الفئة",
+            "all": "كل المنتجات",
+            "browse": "تصفّح {{name}}"
+        },
+        "sort": {
+            "label": "ترتيب حسب",
+            "newest": "الأحدث",
+            "oldest": "الأقدم",
+            "nameAr": "الاسم بالعربية",
+            "nameEn": "الاسم بالإنجليزية",
+            "priceAsc": "السعر: من الأقل للأعلى",
+            "priceDesc": "السعر: من الأعلى للأقل"
+        },
+        "filters": {
+            "title": "التصفية",
+            "reset": "إعادة ضبط",
+            "category": "الفئة",
+            "allCategories": "جميع الفئات",
+            "brand": "العلامة التجارية",
+            "loadingBrands": "جارٍ تحميل العلامات التجارية…",
+            "allBrands": "جميع العلامات التجارية",
+            "price": "نطاق السعر",
+            "minimum": "الحد الأدنى",
+            "maximum": "الحد الأقصى",
+            "invalidPriceRange": "يجب ألا يتجاوز الحد الأدنى السعر الأقصى.",
+            "searchCategories": "ابحث في الفئات",
+            "noCategoriesFound": "لا توجد فئات مطابقة.",
+            "searchBrands": "ابحث في العلامات التجارية",
+            "noBrandsFound": "لا توجد علامات تجارية مطابقة."
+        },
+        "products": {
+            "title": "جميع المنتجات",
+            "showing": "عرض {{from}}–{{to}} من أصل {{total}}"
+        },
+        "product": {
+            "viewProduct": "عرض {{name}}",
+            "noImage": "لا توجد صورة",
+            "startingAt": "يبدأ السعر من",
+            "viewDetails": "عرض التفاصيل"
+        },
+        "loading": "جارٍ تحميل المنتجات",
+        "error": {
+            "title": "تعذّر تحميل المنتجات",
+            "description": "تحقق من الاتصال ثم حاول مرة أخرى.",
+            "retry": "إعادة المحاولة"
+        },
+        "empty": {
+            "title": "لم يتم العثور على منتجات",
+            "description": "جرّب تغيير البحث أو إزالة بعض عوامل التصفية."
+        },
+        "pagination": {
+            "label": "صفحات المنتجات",
+            "page": "الصفحة {{page}} من {{totalPages}}",
+            "previous": "السابق",
+            "next": "التالي"
+        }
+    },
+    "product": {
+        "backToShop": "العودة إلى المتجر",
+        "category": "الفئة",
+        "brand": "العلامة التجارية",
+        "description": "الوصف",
+        "noDescription": "لا يتوفر وصف لهذا المنتج حالياً.",
+        "noImage": "لا توجد صورة للمنتج",
+        "selectOption": "اختر خياراً",
+        "defaultVariant": "افتراضي",
+        "quantity": "الكمية",
+        "decrease": "تقليل الكمية",
+        "increase": "زيادة الكمية",
+        "addToCart": "أضف إلى السلة",
+        "added": "تمت الإضافة إلى السلة.",
+        "addError": "تعذّرت إضافة هذا المنتج إلى السلة.",
+        "notFoundTitle": "المنتج غير موجود",
+        "notFoundDescription": "ربما تم حذف هذا المنتج أو أصبح غير متاح.",
+        "errorTitle": "تعذّر تحميل المنتج",
+        "errorDescription": "تحقق من اتصالك وحاول مرة أخرى.",
+        "retry": "إعادة المحاولة",
+        "recommendations": "قد يعجبك أيضاً",
+        "recommendationsEmpty": "لا توجد اقتراحات حالياً.",
+        "price": "السعر",
+        "chooseImage": "عرض الصورة {{number}}",
+        "openFullscreen": "فتح الصورة بملء الشاشة",
+        "closeFullscreen": "إغلاق الصورة بملء الشاشة",
+        "previousImage": "الصورة السابقة",
+        "nextImage": "الصورة التالية",
+        "unavailable": "هذا المنتج غير متاح حالياً.",
+        "from": "يبدأ من"
+    }
+}

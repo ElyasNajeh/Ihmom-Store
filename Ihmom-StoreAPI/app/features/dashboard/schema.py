@@ -4,9 +4,18 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from app.constants.dashboard import DASHBOARD_GRANULARITIES, DASHBOARD_PERIODS
 from app.features.orders.schema import OrderStatus
 
-DashboardPeriod = Literal["day", "week", "month", "year", "all"]
+DashboardPeriod = Literal[*DASHBOARD_PERIODS]
+DashboardGranularity = Literal[*DASHBOARD_GRANULARITIES]
+
+
+class DashboardSeriesPoint(BaseModel):
+    bucket: datetime
+    orders: int
+    revenue: Decimal
+    customers: int
 
 
 class RecentOrderResponse(BaseModel):
@@ -41,4 +50,6 @@ class DashboardStatsResponse(BaseModel):
     total_order_value: Decimal
     delivered_revenue: Decimal
     cancelled_order_value: Decimal
+    series_granularity: DashboardGranularity
+    series: list[DashboardSeriesPoint]
     recent_orders: list[RecentOrderResponse]

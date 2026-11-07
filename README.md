@@ -2,7 +2,7 @@
 
 Ihmom Store is a full-stack e-commerce web application for selling hookahs, vaping products, incense burners, computer accessories, gaming products, and related items.
 
-Customers can browse products, explore available variants, add items to their cart, and place orders without creating an account. The platform supports Cash on Delivery (COD), delivery fees based on the selected area, and order history lookup using a phone number.
+Customers can browse products, explore available variants, add items to their cart, and place orders without creating an account. The platform supports Cash on Delivery (COD), delivery fees based on the selected area, and guest order lookup verified with a phone number plus order number.
 
 The project also includes an admin dashboard for managing store content, products, customers, delivery areas, orders, and business statistics.
 
@@ -47,7 +47,7 @@ The project also includes an admin dashboard for managing store content, product
 - Guest checkout without registration or login
 - Cash on Delivery (COD)
 - Delivery areas with configurable delivery fees
-- Order history lookup using a phone number
+- Order history lookup verified by phone number and order number
 - Responsive user interface
 
 ### Admin Dashboard
@@ -91,6 +91,7 @@ Ihmom-Store/
 │   ├── src/
 │   ├── Dockerfile
 │   └── Dockerfile.prod
+├── scripts/                 # Developer utilities (seed launcher)
 ├── docker-compose.yml
 ├── docker-compose.prod.yml
 ├── .env.example
@@ -152,7 +153,21 @@ Follow the terminal prompts to configure the admin credentials.
 
 Do not use hardcoded or shared demo passwords.
 
-### 4. Access the Application
+### 4. Seed Static Store Data
+
+The backend includes an idempotent seed command that inserts the static catalog defined in `Ihmom-StoreAPI/app/db/seed_data.py`: categories, brands, delivery areas, and products with their variants. Existing records are reused, so the command can be run repeatedly without creating duplicates.
+
+With the Docker stack running, from the project root:
+
+```bash
+npm run seed
+```
+
+The launcher runs `python -m app.db.seed` inside the `api` container so it uses the same database as the application. Use `npm run seed:local` only with host Python and a reachable `DATABASE_HOST` (typically `localhost`).
+
+To add more static records, edit `Ihmom-StoreAPI/app/db/seed_data.py` and run the command again. The seed only inserts missing records; it does not update or delete existing ones. Reference data is matched by Arabic or English name, and products by English name and brand. Slider images are not seeded because they require uploaded files; manage sliders from the dashboard.
+
+### 5. Access the Application
 
 | Service | Local URL |
 |---|---|
@@ -243,8 +258,8 @@ Environment variables are configured through the root `.env` file.
 
 The project uses Docker volumes for:
 
-- `postgres_data` — PostgreSQL database files
-- `uploads_data` — Uploaded product and slider images
+- `postgres_data` - PostgreSQL database files
+- `uploads_data` - Uploaded product and slider images
 
 Rebuilding or restarting containers does not normally remove these volumes.
 

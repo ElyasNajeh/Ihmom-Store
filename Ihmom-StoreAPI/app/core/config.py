@@ -20,6 +20,20 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, gt=0)
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, gt=0)
 
+    ORDER_HISTORY_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=10,
+        gt=0,
+        le=60,
+    )
+    ORDER_HISTORY_RATE_WINDOW_SECONDS: int = Field(
+        default=300,
+        ge=10,
+        le=86_400,
+    )
+    ORDER_HISTORY_RATE_LIMIT_PER_IP: int = Field(default=10, gt=0)
+    ORDER_HISTORY_RATE_LIMIT_PER_PHONE: int = Field(default=5, gt=0)
+    ORDER_HISTORY_RATE_LIMIT_GLOBAL: int = Field(default=500, gt=0)
+
     ALGORITHM: Literal["HS256", "HS384", "HS512"] = "HS256"
 
     CORS_ORIGINS: str = "http://localhost:5173"

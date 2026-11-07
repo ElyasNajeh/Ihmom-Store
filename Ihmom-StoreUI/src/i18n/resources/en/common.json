@@ -1,0 +1,25 @@
+{
+    "temporarilyUnavailable": "Temporarily unavailable",
+    "language": {
+        "label": "Language",
+        "switchTo": "Switch to {{language}}"
+    },
+    "store": {
+        "tagline": "Everyday essentials. Thoughtful accessories.",
+        "taglineShort": "Accessories & essentials",
+        "description": "Explore a considered selection of phone accessories, hookah accessories, and everyday lifestyle essentials in one convenient place."
+    },
+    "auth": {
+        "checkingSession": "Checking your session…"
+    },
+    "errors": {
+        "unexpectedTitle": "Something went wrong",
+        "unexpectedDescription": "An unexpected error interrupted this page. You can try again or return home.",
+        "notFoundTitle": "Page not found",
+        "notFoundDescription": "The page you are looking for does not exist or has moved.",
+        "reload": "Reload page",
+        "tryAgain": "Try again",
+        "backHome": "Back to home",
+        "goBack": "Go back"
+    }
+}

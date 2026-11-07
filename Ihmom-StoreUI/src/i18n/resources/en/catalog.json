@@ -1,0 +1,101 @@
+{
+    "shop": {
+        "eyebrow": "IHMOOM STORE",
+        "title": "Shop all products",
+        "description": "Browse the catalogue and narrow it down to what you need.",
+        "loadingCount": "Loading products…",
+        "productCount_one": "{{count}} product",
+        "productCount_other": "{{count}} products",
+        "searchPlaceholder": "Search products…",
+        "searchLabel": "Search products",
+        "clearSearch": "Clear search",
+        "categories": {
+            "title": "Shop by category",
+            "all": "All products",
+            "browse": "Browse {{name}}"
+        },
+        "sort": {
+            "label": "Sort by",
+            "newest": "Newest",
+            "oldest": "Oldest",
+            "nameAr": "Arabic name",
+            "nameEn": "English name",
+            "priceAsc": "Price: low to high",
+            "priceDesc": "Price: high to low"
+        },
+        "filters": {
+            "title": "Filters",
+            "reset": "Reset filters",
+            "category": "Category",
+            "allCategories": "All categories",
+            "brand": "Brand",
+            "loadingBrands": "Loading brands…",
+            "allBrands": "All brands",
+            "price": "Price range",
+            "minimum": "Minimum",
+            "maximum": "Maximum",
+            "invalidPriceRange": "Minimum price must not exceed maximum price.",
+            "searchCategories": "Search categories",
+            "noCategoriesFound": "No categories found.",
+            "searchBrands": "Search brands",
+            "noBrandsFound": "No brands found."
+        },
+        "products": {
+            "title": "All products",
+            "showing": "Showing {{from}}–{{to}} of {{total}}"
+        },
+        "product": {
+            "viewProduct": "View {{name}}",
+            "noImage": "No image available",
+            "startingAt": "Starting at",
+            "viewDetails": "View details"
+        },
+        "loading": "Loading products",
+        "error": {
+            "title": "Products could not be loaded",
+            "description": "Check your connection and try again.",
+            "retry": "Try again"
+        },
+        "empty": {
+            "title": "No products found",
+            "description": "Try changing your search or removing some filters."
+        },
+        "pagination": {
+            "label": "Product pages",
+            "page": "Page {{page}} of {{totalPages}}",
+            "previous": "Previous",
+            "next": "Next"
+        }
+    },
+    "product": {
+        "backToShop": "Back to shop",
+        "category": "Category",
+        "brand": "Brand",
+        "description": "Description",
+        "noDescription": "No description is available for this product yet.",
+        "noImage": "No product image",
+        "selectOption": "Choose an option",
+        "defaultVariant": "Default",
+        "quantity": "Quantity",
+        "decrease": "Decrease quantity",
+        "increase": "Increase quantity",
+        "addToCart": "Add to cart",
+        "added": "Added to cart.",
+        "addError": "This product could not be added to the cart.",
+        "notFoundTitle": "Product not found",
+        "notFoundDescription": "This product may have been removed or is no longer available.",
+        "errorTitle": "Product could not be loaded",
+        "errorDescription": "Check your connection and try again.",
+        "retry": "Try again",
+        "recommendations": "You may also like",
+        "recommendationsEmpty": "No recommendations available right now.",
+        "price": "Price",
+        "chooseImage": "Show image {{number}}",
+        "openFullscreen": "Open image fullscreen",
+        "closeFullscreen": "Close fullscreen image",
+        "previousImage": "Previous image",
+        "nextImage": "Next image",
+        "unavailable": "This product is currently unavailable.",
+        "from": "From"
+    }
+}

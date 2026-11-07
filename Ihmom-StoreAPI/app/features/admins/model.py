@@ -1,34 +1,30 @@
-from datetime import datetime, timezone
+from sqlalchemy import Column, String
 
-from sqlalchemy import BigInteger, Column, DateTime, String
-
+from app.constants.admins import (
+    ADMIN_EMAIL_MAX_LENGTH,
+    ADMIN_PASSWORD_HASH_MAX_LENGTH,
+    ADMIN_USERNAME_MAX_LENGTH,
+)
 from app.db.base import Base
+from app.db.mixins import BigIntIdMixin, CreatedAtMixin
 
 
-class Admin(Base):
+class Admin(BigIntIdMixin, CreatedAtMixin, Base):
     __tablename__ = "admins"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-
     username = Column(
-        String(100),
+        String(ADMIN_USERNAME_MAX_LENGTH),
         unique=True,
         nullable=False,
     )
 
     email = Column(
-        String(255),
+        String(ADMIN_EMAIL_MAX_LENGTH),
         unique=True,
         nullable=False,
     )
 
     hashed_password = Column(
-        String(255),
-        nullable=False,
-    )
-
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        String(ADMIN_PASSWORD_HASH_MAX_LENGTH),
         nullable=False,
     )

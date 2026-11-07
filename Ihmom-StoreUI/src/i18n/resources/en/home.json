@@ -1,0 +1,35 @@
+{
+    "hero": {
+        "sectionLabel": "Featured promotions",
+        "carouselRole": "carousel",
+        "kicker": "Thoughtful finds for everyday life",
+        "chooseSlide": "Choose a featured slide",
+        "goToSlide": "Go to slide {{number}}",
+        "previousSlide": "Previous slide",
+        "nextSlide": "Next slide",
+        "sliderEyebrow": "Store spotlight",
+        "sliderDescription": "Discover thoughtful picks from the Ihmom Store, selected for everyday life.",
+        "sliderCta": "Shop the collection"
+    },
+    "offers": {
+        "eyebrow": "Worth a look",
+        "title": "Featured picks from the catalogue",
+        "description": "Explore selected items and browse the full catalogue to find what suits you.",
+        "viewShop": "Shop all products",
+        "offerBadge": "Featured",
+        "priceNote": "Starting price",
+        "disclaimer": "Featured items are drawn from the current catalogue.",
+        "error": "These products are temporarily unavailable. Visit the shop to try again.",
+        "empty": "There are no products to feature here yet."
+    },
+    "latestProducts": {
+        "sectionLabel": "Latest products"
+    },
+    "aboutCta": {
+        "eyebrow": "Get to know Ihmom",
+        "title": "A store built around the things you need.",
+        "description": "Learn more about our store, how we work, and how to get in touch with us.",
+        "aboutButton": "About us",
+        "contactButton": "Contact us"
+    }
+}

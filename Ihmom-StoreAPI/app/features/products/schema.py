@@ -1,35 +1,122 @@
+
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Literal, Annotated
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     field_validator,
-    model_validator,
+    model_validator, StringConstraints,
 )
 
-from app.shared.schema import PageResponse
+from app.constants.common import MONEY_DECIMAL_PLACES, MONEY_MAX_DIGITS
+from app.constants.products import (
+    DEFAULT_PRODUCT_SORT,
+    DEFAULT_VARIANT_NAME,
+    PRODUCT_IDS_MAX_BATCH,
+    PRODUCT_NAME_MAX_LENGTH,
+    PRODUCT_SEARCH_MAX_LENGTH,
+    PRODUCT_SKU_MAX_LENGTH,
+    PRODUCT_VARIANT_NAME_MAX_LENGTH,
+)
+from app.constants.query import (
+    DEFAULT_PAGE,
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_NUMBER,
+    MAX_PAGE_SIZE,
+    SortDirection,
+)
+from app.shared.schema import ImageResponseBase, PageResponse, QueryBase, FilterBase
 
-
-ProductSort = Literal[
-    "newest",
-    "oldest",
+ProductSortBy = Literal[
+    "id",
+    "created_at",
     "name_ar",
     "name_en",
-    "price_asc",
-    "price_desc",
+    "price",
 ]
-ProductAdminSort = Literal["id", "created_at", "name_ar", "name_en", "price"]
-SortOrder = Literal["asc", "desc"]
 
+class ProductFilter(FilterBase):
+    category_id: int | None = Field(default=None, ge=1)
+    brand_id: int | None = Field(default=None, ge=1)
+    is_active: bool | None = None
+    min_price: Decimal | None = Field(
+        default=None,
+        ge=0,
+        max_digits=MONEY_MAX_DIGITS,
+        decimal_places=MONEY_DECIMAL_PLACES,
+    )
+    max_price: Decimal | None = Field(
+        default=None,
+        ge=0,
+        max_digits=MONEY_MAX_DIGITS,
+        decimal_places=MONEY_DECIMAL_PLACES,
+    )
+
+    @model_validator(mode='after')
+    def validate_price_range(self) -> 'ProductFilter':
+        if (
+            self.min_price is not None
+            and self.max_price is not None
+            and self.min_price > self.max_price
+        ):
+            raise ValueError('Minimum price cannot exceed maximum price')
+
+        return self
+
+
+class ProductQuery(QueryBase):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+
+    page: int = Field(default=DEFAULT_PAGE, ge=1, le=MAX_PAGE_NUMBER)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE)
+    search: Annotated[
+        str | None,
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=1,
+            max_length=PRODUCT_SEARCH_MAX_LENGTH,
+        ),
+    ] = None
+    filter: ProductFilter = Field(default_factory=ProductFilter)
+    sort_by: ProductSortBy = DEFAULT_PRODUCT_SORT
+    order: SortDirection = SortDirection.DESC
+    ids: list[int] | None = Field(
+        default=None,
+        min_length=1,
+        max_length=PRODUCT_IDS_MAX_BATCH,
+    )
+
+    @field_validator('search')
+    @classmethod
+    def normalize_search(cls, value: str | None) -> str | None:
+        return value or None
+
+    @field_validator('ids')
+    @classmethod
+    def validate_ids(cls, value: list[int] | None) -> list[int] | None:
+        if value is not None and any(product_id < 1 for product_id in value):
+            raise ValueError('Product IDs must be greater than zero')
+
+        return value
 
 class ProductVariantBase(BaseModel):
-    name_ar: str = Field(min_length=1, max_length=100)
-    name_en: str = Field(min_length=1, max_length=100)
-    sku: str | None = Field(default=None, max_length=100)
-    price: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
+    name_ar: str = Field(
+        min_length=1,
+        max_length=PRODUCT_VARIANT_NAME_MAX_LENGTH,
+    )
+    name_en: str = Field(
+        min_length=1,
+        max_length=PRODUCT_VARIANT_NAME_MAX_LENGTH,
+    )
+    sku: str | None = Field(default=None, max_length=PRODUCT_SKU_MAX_LENGTH)
+    price: Decimal = Field(
+        ge=0,
+        max_digits=MONEY_MAX_DIGITS,
+        decimal_places=MONEY_DECIMAL_PLACES,
+    )
     is_active: bool = True
 
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
@@ -48,7 +135,7 @@ class ProductVariantBase(BaseModel):
 
     @model_validator(mode="after")
     def internal_name_is_reserved(self):
-        if self.name_ar == "__default__" and self.name_en == "__default__":
+        if self.name_ar == DEFAULT_VARIANT_NAME and self.name_en == DEFAULT_VARIANT_NAME:
             raise ValueError("The internal default variant name is reserved")
         return self
 
@@ -58,14 +145,22 @@ class ProductVariantCreate(ProductVariantBase):
 
 
 class ProductVariantUpdate(BaseModel):
-    name_ar: str | None = Field(default=None, min_length=1, max_length=100)
-    name_en: str | None = Field(default=None, min_length=1, max_length=100)
-    sku: str | None = Field(default=None, max_length=100)
+    name_ar: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=PRODUCT_VARIANT_NAME_MAX_LENGTH,
+    )
+    name_en: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=PRODUCT_VARIANT_NAME_MAX_LENGTH,
+    )
+    sku: str | None = Field(default=None, max_length=PRODUCT_SKU_MAX_LENGTH)
     price: Decimal | None = Field(
         default=None,
         ge=0,
-        max_digits=10,
-        decimal_places=2,
+        max_digits=MONEY_MAX_DIGITS,
+        decimal_places=MONEY_DECIMAL_PLACES,
     )
     is_active: bool | None = None
 
@@ -87,14 +182,14 @@ class ProductVariantUpdate(BaseModel):
 
     @field_validator("price", mode="before")
     @classmethod
-    def price_cannot_be_null(cls, value: Decimal | None) -> Decimal:
+    def price_cannot_be_null(cls, value: Decimal) -> Decimal:
         if value is None:
             raise ValueError("price cannot be null")
         return value
 
     @field_validator("is_active", mode="before")
     @classmethod
-    def active_status_cannot_be_null(cls, value: bool | None) -> bool:
+    def active_status_cannot_be_null(cls, value: bool) -> bool:
         if value is None:
             raise ValueError("is_active cannot be null")
         return value
@@ -103,8 +198,8 @@ class ProductVariantUpdate(BaseModel):
 class ProductBase(BaseModel):
     category_id: int = Field(ge=1)
     brand_id: int = Field(ge=1)
-    name_ar: str = Field(min_length=1, max_length=200)
-    name_en: str = Field(min_length=1, max_length=200)
+    name_ar: str = Field(min_length=1, max_length=PRODUCT_NAME_MAX_LENGTH)
+    name_en: str = Field(min_length=1, max_length=PRODUCT_NAME_MAX_LENGTH)
     description_ar: str | None = None
     description_en: str | None = None
     is_active: bool = True
@@ -128,10 +223,10 @@ class ProductCreate(ProductBase):
     price: Decimal | None = Field(
         default=None,
         ge=0,
-        max_digits=10,
-        decimal_places=2,
+        max_digits=MONEY_MAX_DIGITS,
+        decimal_places=MONEY_DECIMAL_PLACES,
     )
-    sku: str | None = Field(default=None, max_length=100)
+    sku: str | None = Field(default=None, max_length=PRODUCT_SKU_MAX_LENGTH)
     variants: list[ProductVariantCreate] | None = None
 
     @field_validator("sku", mode="before")
@@ -163,8 +258,16 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     category_id: int | None = Field(default=None, ge=1)
     brand_id: int | None = Field(default=None, ge=1)
-    name_ar: str | None = Field(default=None, min_length=1, max_length=200)
-    name_en: str | None = Field(default=None, min_length=1, max_length=200)
+    name_ar: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=PRODUCT_NAME_MAX_LENGTH,
+    )
+    name_en: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=PRODUCT_NAME_MAX_LENGTH,
+    )
     description_ar: str | None = None
     description_en: str | None = None
     is_active: bool | None = None
@@ -173,14 +276,14 @@ class ProductUpdate(BaseModel):
 
     @field_validator("category_id", "brand_id", mode="before")
     @classmethod
-    def related_id_cannot_be_null(cls, value: int | None) -> int:
+    def related_id_cannot_be_null(cls, value: int) -> int:
         if value is None:
             raise ValueError("Category and brand IDs cannot be null")
         return value
 
     @field_validator("name_ar", "name_en", mode="before")
     @classmethod
-    def trim_names(cls, value: str | None) -> str:
+    def trim_names(cls, value: str) -> str:
         if value is None:
             raise ValueError("Product names cannot be null")
         return value.strip() if isinstance(value, str) else value
@@ -194,7 +297,7 @@ class ProductUpdate(BaseModel):
 
     @field_validator("is_active", mode="before")
     @classmethod
-    def active_status_cannot_be_null(cls, value: bool | None) -> bool:
+    def active_status_cannot_be_null(cls, value: bool) -> bool:
         if value is None:
             raise ValueError("is_active cannot be null")
         return value
@@ -236,14 +339,8 @@ class PublicProductVariantResponse(BaseModel):
     price: Decimal
 
 
-class ProductImageResponse(BaseModel):
-    id: int
+class ProductImageResponse(ImageResponseBase):
     product_id: int
-    image: str
-    is_primary: bool
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class PublicProductImageResponse(BaseModel):
@@ -289,6 +386,4 @@ class PublicProductResponse(BaseModel):
 
 
 ProductListResponse = PageResponse[ProductResponse]
-
-
 PublicProductListResponse = PageResponse[PublicProductResponse]

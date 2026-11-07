@@ -11,11 +11,26 @@ from fastapi import HTTPException, UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
 import pillow_heif
 
+from app.constants.images import (
+    CATEGORY_IMAGE_SUBDIRECTORY,
+    CATEGORY_MAX_SIZE,
+    CATEGORY_WEBP_QUALITY,
+    IMAGE_READ_CHUNK_SIZE,
+    IMAGE_SPOOL_MAX_BYTES,
+    IMAGE_WEBP_EXTENSION,
+    IMAGE_WEBP_FORMAT,
+    IMAGE_WEBP_METHOD,
+    PRODUCT_IMAGE_SUBDIRECTORY,
+    PRODUCT_MAX_SIZE,
+    PRODUCT_WEBP_QUALITY,
+    SLIDER_IMAGE_SUBDIRECTORY,
+    SLIDER_MAX_SIZE,
+    SLIDER_WEBP_QUALITY,
+)
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 UPLOAD_ROOT = settings.UPLOAD_ROOT
-READ_CHUNK_SIZE = 1024 * 1024
 
 # Phone cameras commonly produce HEIC/HEIF (and increasingly AVIF) files.
 # Register those formats with Pillow. Uploads are normalized to the
@@ -24,13 +39,6 @@ pillow_heif.register_heif_opener()
 register_avif_opener = getattr(pillow_heif, "register_avif_opener", None)
 if register_avif_opener:
     register_avif_opener()
-
-CATEGORY_MAX_SIZE = (1200, 1200)
-CATEGORY_WEBP_QUALITY = 82
-PRODUCT_MAX_SIZE = (1600, 1600)
-PRODUCT_WEBP_QUALITY = 84
-SLIDER_MAX_SIZE = (2560, 1440)
-SLIDER_WEBP_QUALITY = 82
 
 ImageProcessor = Callable[[Image.Image], Image.Image]
 
@@ -45,9 +53,9 @@ def optimize_upload(
     """Validate and atomically save an uploaded image as an optimized WebP."""
     destination_dir = UPLOAD_ROOT / subdirectory
     destination_dir.mkdir(parents=True, exist_ok=True)
-    destination = destination_dir / f"{uuid4()}.webp"
+    destination = destination_dir / f"{uuid4()}{IMAGE_WEBP_EXTENSION}"
 
-    with SpooledTemporaryFile(max_size=5 * 1024 * 1024) as source:
+    with SpooledTemporaryFile(max_size=IMAGE_SPOOL_MAX_BYTES) as source:
         _copy_upload(upload, source)
         try:
             _write_optimized_webp(
@@ -77,7 +85,7 @@ def optimize_upload(
 
 def preview_product_upload(upload: UploadFile) -> bytes:
     """Convert an uploaded product image to an in-memory browser preview."""
-    with SpooledTemporaryFile(max_size=5 * 1024 * 1024) as source:
+    with SpooledTemporaryFile(max_size=IMAGE_SPOOL_MAX_BYTES) as source:
         _copy_upload(upload, source)
 
         try:
@@ -86,9 +94,9 @@ def preview_product_upload(upload: UploadFile) -> bytes:
                 preview = BytesIO()
                 image.save(
                     preview,
-                    format="WEBP",
+                    format=IMAGE_WEBP_FORMAT,
                     quality=PRODUCT_WEBP_QUALITY,
-                    method=6,
+                    method=IMAGE_WEBP_METHOD,
                     exact=has_alpha,
                 )
                 return preview.getvalue()
@@ -114,7 +122,7 @@ def optimize_slider_upload(upload: UploadFile) -> str:
     """Resize and save a slider image using the standard WebP preset."""
     return optimize_upload(
         upload,
-        "sliders",
+        SLIDER_IMAGE_SUBDIRECTORY,
         SLIDER_MAX_SIZE,
         SLIDER_WEBP_QUALITY,
     )
@@ -124,7 +132,7 @@ def optimize_category_upload(upload: UploadFile) -> str:
     """Resize and save a category image using the standard WebP preset."""
     return optimize_upload(
         upload,
-        "categories",
+        CATEGORY_IMAGE_SUBDIRECTORY,
         CATEGORY_MAX_SIZE,
         CATEGORY_WEBP_QUALITY,
     )
@@ -134,7 +142,7 @@ def optimize_product_upload(upload: UploadFile) -> str:
     """Resize and save a product image using the standard WebP preset."""
     return optimize_upload(
         upload,
-        "products",
+        PRODUCT_IMAGE_SUBDIRECTORY,
         PRODUCT_MAX_SIZE,
         PRODUCT_WEBP_QUALITY,
     )
@@ -152,15 +160,18 @@ def validate_uploaded_image_url(value: str, subdirectory: str) -> str:
         not relative_name
         or "/" in relative_name
         or relative_name in {".", ".."}
-        or not relative_name.lower().endswith(".webp")
+        or not relative_name.lower().endswith(IMAGE_WEBP_EXTENSION)
     ):
         raise ValueError("Image must reference a valid WebP upload")
 
     try:
-        image_id = UUID(relative_name[:-5])
+        image_id = UUID(relative_name[: -len(IMAGE_WEBP_EXTENSION)])
     except ValueError as exc:
         raise ValueError("Image must reference a valid WebP upload") from exc
-    if str(image_id) != relative_name[:-5].lower():
+    if (
+        str(image_id)
+        != relative_name[: -len(IMAGE_WEBP_EXTENSION)].lower()
+    ):
         raise ValueError("Image must reference a valid WebP upload")
 
     return f"{expected_prefix}{relative_name}"
@@ -234,7 +245,7 @@ def _write_optimized_webp(
 
         with NamedTemporaryFile(
             mode="wb",
-            suffix=".webp.tmp",
+            suffix=f"{IMAGE_WEBP_EXTENSION}.tmp",
             prefix=f".{destination.stem}-",
             dir=destination.parent,
             delete=False,
@@ -243,9 +254,9 @@ def _write_optimized_webp(
 
         image.save(
             temporary_path,
-            format="WEBP",
+            format=IMAGE_WEBP_FORMAT,
             quality=quality,
-            method=6,
+            method=IMAGE_WEBP_METHOD,
             exact=has_alpha,
         )
         os.replace(temporary_path, destination)
@@ -259,7 +270,7 @@ def _write_optimized_webp(
 
 def _copy_upload(upload: UploadFile, destination) -> None:
     has_content = False
-    while chunk := upload.file.read(READ_CHUNK_SIZE):
+    while chunk := upload.file.read(IMAGE_READ_CHUNK_SIZE):
         has_content = True
         destination.write(chunk)
 

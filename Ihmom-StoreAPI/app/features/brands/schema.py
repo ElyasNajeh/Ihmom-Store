@@ -1,13 +1,60 @@
+
 from datetime import datetime
+from enum import Enum
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+)
 
-from app.shared.schema import PageResponse
+from app.constants.brands import (
+    BRAND_NAME_MAX_LENGTH,
+    BRAND_SEARCH_MAX_LENGTH,
+)
+from app.constants.query import (
+    DEFAULT_PAGE,
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_NUMBER,
+    MAX_PAGE_SIZE,
+)
+from app.shared.schema import FilterBase, PageResponse, QueryBase
+
+
+class BrandFilter(FilterBase):
+    is_active: bool | None = None
+
+
+class BrandSortBy(str, Enum):
+    ID = "id"
+    CREATED_AT = "created_at"
+    NAME_AR = "name_ar"
+    NAME_EN = "name_en"
+
+
+class BrandQuery(QueryBase):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    page: int = Field(default=DEFAULT_PAGE, ge=1, le=MAX_PAGE_NUMBER)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE)
+    search: Annotated[
+        str | None,
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=1,
+            max_length=BRAND_SEARCH_MAX_LENGTH,
+        ),
+    ] = None
+    filter: BrandFilter | None = None
+    sort_by: BrandSortBy | None = None
 
 
 class BrandBase(BaseModel):
-    name_ar: str = Field(min_length=1, max_length=100)
-    name_en: str = Field(min_length=1, max_length=100)
+    name_ar: str = Field(min_length=1, max_length=BRAND_NAME_MAX_LENGTH)
+    name_en: str = Field(min_length=1, max_length=BRAND_NAME_MAX_LENGTH)
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -22,8 +69,16 @@ class BrandCreate(BrandBase):
 
 
 class BrandUpdate(BaseModel):
-    name_ar: str | None = Field(default=None, min_length=1, max_length=100)
-    name_en: str | None = Field(default=None, min_length=1, max_length=100)
+    name_ar: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=BRAND_NAME_MAX_LENGTH,
+    )
+    name_en: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=BRAND_NAME_MAX_LENGTH,
+    )
     is_active: bool | None = None
 
     model_config = ConfigDict(str_strip_whitespace=True)

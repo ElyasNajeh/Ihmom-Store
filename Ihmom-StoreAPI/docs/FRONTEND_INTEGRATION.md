@@ -93,12 +93,12 @@ The access JWT belongs in memory only. Do not write it to cookies, `localStorage
 let accessToken: string | null = null;
 let refreshPromise: Promise<boolean> | null = null;
 
-export async function login(email: string, password: string) {
+export async function login(username: string, password: string) {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   });
   const data = await readJson(response);
   if (!response.ok) throw new HttpError(response.status, data);
@@ -143,7 +143,7 @@ export async function adminFetch(path: string, init: RequestInit = {}) {
 
 The shared promise prevents a burst of expired requests from rotating the refresh cookie concurrently. Avoid automatic retries for checkout, create, delete, and file-upload requests unless the UI has explicit idempotency handling; the API does not accept an idempotency key.
 
-On a fresh page, call refresh once to restore a session from the cookie, then `/auth/me`. A `403` from refresh/logout normally means the browser Origin does not match deployment configuration—not that the user lacks an admin role.
+On a fresh page, call refresh once to restore a session from the cookie, then `/auth/me`. A `403` from refresh/logout normally means the browser Origin does not match deployment configuration-not that the user lacks an admin role.
 
 ## Public reads and query parameters
 
@@ -167,7 +167,7 @@ Public categories, brands, delivery areas, sliders, and products already exclude
 
 For simple products, `has_selectable_variants` is false and the single public variant has no name fields. Add that variant ID to the cart directly. For selectable products, require the shopper to choose an active returned variant. Never send a price from the cart to checkout; display estimates only and use the checkout response as the authoritative total.
 
-Choose the image with `is_primary=true`, falling back to the first image or a UI placeholder. Prefix `image` with the API origin.
+Choose the image with `is_primary=true`, falling back to the first image or a UI placeholder. Prefix `image` with the API origin. Categories use the same rule with their embedded `images` array, which may be empty.
 
 ## Forms and validation
 
@@ -196,6 +196,16 @@ export async function uploadProductImages(productId: number, files: File[]) {
   const body = new FormData();
   files.forEach((file) => body.append("files", file));
   const response = await adminFetch(`/products/${productId}/images`, {
+    method: "POST",
+    body,
+  });
+  return parseResponse(response);
+}
+
+export async function uploadCategoryImages(categoryId: number, files: File[]) {
+  const body = new FormData();
+  files.forEach((file) => body.append("files", file));
+  const response = await adminFetch(`/categories/${categoryId}/images`, {
     method: "POST",
     body,
   });
@@ -244,22 +254,31 @@ async function checkout(payload: CheckoutRequest) {
 
 Merge duplicate cart lines before submitting because repeated variant IDs are rejected. Disable the submit button from the first click until the request resolves. Do not retry automatically after a timeout: the request may have committed even if the response was lost. Ask the customer to check history before resubmitting. Render server totals and order number on success and clear the cart only after `201`.
 
+The `201` body also contains `history_access_token` and `history_access_token_expires_in`. Offer a "Download invoice" button on the success screen and request `GET /orders/history/invoice` with that token, then save the returned blob locally. A button is preferable to an automatic download because browsers routinely block programmatic downloads that are not user-initiated. Keep the token in component state only, show a pending state while the PDF is generated, and explain that the link expires. Do not call the order-history verification endpoint again just to download the invoice the customer just placed.
+
 Catalog availability can change between browsing and checkout. Treat an unavailable-item `422` as a prompt to refresh the cart/catalog. A delivery area can similarly become inactive.
 
 ## Order history
 
-Send the phone in a JSON body and pagination in the query:
+Verification requires both the phone and the order number. Submit them to the verification endpoint, keep the returned token in memory only, and immediately exchange it for the verified order:
 
 ```ts
-const response = await fetch(`${API_URL}/orders/history?page=1&page_size=12`, {
+const verification = await fetch(`${API_URL}/orders/history/verify`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ phone }),
+  body: JSON.stringify({ phone, order_number: orderNumber }),
+});
+// verification.ok -> { access_token, token_type: "Bearer", expires_in }
+
+const response = await fetch(`${API_URL}/orders/history`, {
+  headers: { Authorization: `Bearer ${access_token}` },
   cache: "no-store",
 });
 ```
 
-The response intentionally contains summary fields only. Treat an empty page as “no orders found” without revealing whether the phone belongs to a stored customer. Avoid browser/client caching and analytics payloads containing the phone or returned order details.
+Both calls must bypass the admin API client and its refresh interceptor; this token is not an admin credential and must not be attached to other requests. The response contains the full verified order - customer name and phone, delivery area and address, notes, line items, and totals — so render it directly in the order-details card. A `404` is identical for a wrong phone, an unknown order, and a phone with no orders, so show one generic message. A `429` means verification was rate limited; honor `Retry-After`. On `401`, clear the in-memory token and ask the customer to verify again. Never persist the phone/order credentials or the token in `localStorage` or `sessionStorage`, and never include them in analytics. Tokens expire after `expires_in` seconds (10 minutes by default).
+
+The same token can download the verified order's invoice from `GET /orders/history/invoice` (`responseType: "blob"`). Offer this as a "Download invoice" button on the order-details card, show a pending state while the PDF is generated, and report failures with a retry toast. The endpoint ignores any order-selection parameters and derives the order from the token, so a token for one order cannot retrieve another. Use the filename from `Content-Disposition` when present and always revoke the object URL after saving.
 
 ## Admin orders and invoices
 
@@ -274,11 +293,11 @@ Status controls should expose only valid next states:
 
 The server is authoritative and may return `409` when another administrator changed the order. Refresh the order after a conflict. Repeating the current status is accepted and returns the current order.
 
-Download invoices as blobs:
+Download invoices as blobs. Pass `lang=en|ar` to match the active UI language:
 
 ```ts
-export async function downloadInvoice(orderId: number) {
-  const response = await adminFetch(`/orders/admin/${orderId}/invoice`);
+export async function downloadInvoice(orderId: number, language: 'en' | 'ar') {
+  const response = await adminFetch(`/orders/admin/${orderId}/invoice?lang=${language}`);
   if (!response.ok) throw new HttpError(response.status, await readJson(response));
   const blob = await response.blob();
   const disposition = response.headers.get("Content-Disposition");
@@ -295,6 +314,21 @@ export async function downloadInvoice(orderId: number) {
 ## Dashboard
 
 Request `/dashboard/stats?period=day|week|month|year|all`. Treat every subtotal/value/revenue field as a decimal string. `delivered_revenue` is delivered orders only; `cancelled_order_value` is separate. Empty periods legitimately return zero values and no recent orders.
+
+## Cache invalidation
+
+Every mutation should invalidate the caches whose data it changed. With TanStack Query, invalidating an active query refetches it immediately even when `staleTime` has not elapsed, so this is what keeps the admin dashboard and lists current without polling.
+
+- Product create/update/delete: product lists and details, plus dashboard totals. Order items embed current product and variant names, so refresh order lists/details too.
+- Variant changes: the product's variant list, product lists/details, dashboard totals, and orders.
+- Image changes: the product gallery, product lists/details. Category image changes also refresh the category lists that embed them. Dashboard totals do not count images.
+- Category/brand changes: their own lists, product lists/details (they embed category/brand summaries), and dashboard totals.
+- Sliders, admins, customers: their own lists and dashboard totals.
+- Delivery areas: area lists plus orders (orders embed area names).
+- Checkout: orders, customers, and dashboard totals.
+- Order status changes: the order detail (set the mutation result directly), order lists, and dashboard totals.
+
+Prefer a small shared helper module over repeating raw `queryKey` arrays in every hook. Use prefix invalidation for keyed lists (for example `["ORDERS"]`) so every page/filter combination refreshes, and avoid polling the dashboard as a substitute for invalidation.
 
 ## Error, loading, and retry policy
 

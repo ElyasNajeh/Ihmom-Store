@@ -1,0 +1,46 @@
+{
+    "header": {
+        "home": "الرئيسية",
+        "shop": "المتجر",
+        "myOrders": "طلباتي",
+        "about": "عن المتجر",
+        "contact": "تواصل معنا",
+        "mainLabel": "التنقل الرئيسي",
+        "mobileLabel": "التنقل عبر الجوال",
+        "mobileLinksLabel": "روابط التنقل عبر الجوال",
+        "homeAriaLabel": "الصفحة الرئيسية لمتجر {{store}}",
+        "search": "بحث عن المنتجات",
+        "searchPlaceholder": "ابحث عن المنتجات…",
+        "searchSubmit": "بحث",
+        "closeSearch": "إغلاق البحث",
+        "cart": "السلة",
+        "cartWithCount_one": "السلة، {{count}} عنصر",
+        "cartWithCount_other": "السلة، {{count}} عناصر",
+        "visitStore": "تفضل بزيارة متجرنا",
+        "openNavigation": "فتح قائمة التنقل",
+        "closeNavigation": "إغلاق قائمة التنقل",
+        "closeNavigationMenu": "إغلاق قائمة التنقل",
+        "browse": "تصفح",
+        "quickActions": "إجراءات سريعة",
+        "viewCart": "عرض السلة"
+    },
+    "footer": {
+        "explore": "استكشف",
+        "customerCare": "خدمة العملاء",
+        "aboutUs": "من نحن",
+        "contactUs": "تواصل معنا",
+        "deliveryInformation": "معلومات التوصيل",
+        "returnsExchanges": "الاستبدال والاسترجاع",
+        "faqs": "الأسئلة الشائعة",
+        "getInTouch": "ابق على تواصل",
+        "openMap": "افتح موقع {{address}} في خرائط جوجل",
+        "rightsReserved": "جميع الحقوق محفوظة.",
+        "backToTop": "العودة للأعلى",
+        "trust": {
+            "securePayments": "دفع آمن",
+            "fastDelivery": "توصيل سريع",
+            "easyReturns": "إرجاع سهل",
+            "qualityGuarantee": "جودة مضمونة"
+        }
+    }
+}

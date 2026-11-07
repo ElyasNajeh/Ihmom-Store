@@ -25,7 +25,7 @@ Detailed contracts are in [docs/API_REFERENCE.md](docs/API_REFERENCE.md). See [d
 - Alembic
 - python-jose JWTs and bcrypt password hashes
 - Pillow/pillow-heif image processing
-- ReportLab, arabic-reshaper, and python-bidi invoices
+- ReportLab invoices localized in English and Arabic (arabic-reshaper, python-bidi)
 
 ## Structure
 
@@ -33,14 +33,16 @@ Detailed contracts are in [docs/API_REFERENCE.md](docs/API_REFERENCE.md). See [d
 Ihmom-StoreAPI/
 ├── app/
 │   ├── core/             # Settings and security dependencies
-│   ├── db/               # Base, session, and admin bootstrap command
+│   ├── db/               # Base, session, admin bootstrap, and static seed
 │   ├── features/         # Feature-local model/schema/service/router modules
 │   ├── shared/           # Pagination, CRUD, image, and phone utilities
 │   └── main.py           # FastAPI setup and router registration
 ├── alembic/              # Migration environment and revisions
 ├── docs/                 # Architecture, API, and integration guides
+├── tests/                # Pytest security and regression tests
 ├── Dockerfile            # Development image
 ├── Dockerfile.prod       # Production image
+├── requirements-dev.txt  # Test dependencies
 └── requirements.txt
 ```
 
@@ -66,6 +68,11 @@ Settings are read from environment variables or `.env` in the repository root/ba
 | `ALGORITHM` | JWT algorithm | `HS256`, `HS384`, or `HS512` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access-token lifetime | `30` |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh-token/cookie lifetime | `7` |
+| `ORDER_HISTORY_TOKEN_EXPIRE_MINUTES` | Guest order-history token lifetime | `10` |
+| `ORDER_HISTORY_RATE_WINDOW_SECONDS` | Fixed rate-limit window | `300` |
+| `ORDER_HISTORY_RATE_LIMIT_PER_IP` | Verification attempts per IP per window | `10` |
+| `ORDER_HISTORY_RATE_LIMIT_PER_PHONE` | Verification attempts per normalized phone per window | `5` |
+| `ORDER_HISTORY_RATE_LIMIT_GLOBAL` | Verification attempts for all clients per window | `500` |
 | `CORS_ORIGINS` | Exact comma-separated browser origins | `http://localhost:5173` |
 | `COOKIE_SECURE` | Send refresh cookie only over HTTPS | `false` locally, `true` in production |
 | `COOKIE_SAMESITE` | Refresh-cookie SameSite policy | `strict` |
@@ -106,6 +113,24 @@ python -m app.db.create_admin
 
 Run these commands with `Ihmom-StoreAPI` as the working directory. `UPLOAD_ROOT` must be writable.
 
+## Static seed data
+
+`app/db/seed.py` inserts the static catalog defined in `app/db/seed_data.py` through the feature services, so schema validation, SKU rules, and product variant handling stay consistent with the API. It is idempotent: reference records are matched by Arabic or English name, and products by English name and brand.
+
+From the repository root:
+
+```bash
+npm run seed
+```
+
+Or inside the API environment:
+
+```bash
+python -m app.db.seed
+```
+
+The seed covers categories, brands, delivery areas, and simple or multi-variant products. Slider images are not seeded because they require real uploaded files; manage sliders from the dashboard. Edit `seed_data.py` to add records and run the command again; existing records are never updated or deleted.
+
 ## Migrations
 
 Inspect the current state and schema drift with:
@@ -127,7 +152,7 @@ Tokens contain distinct `access`/`refresh` types and cannot be interchanged. The
 
 Product and slider uploads are decoded as images, orientation-corrected, resized, converted atomically to WebP, and served below `/uploads`. Persist `UPLOAD_ROOT` in production. Do not trust the original file name. Invalid, empty, corrupted, or Pillow-unsafe images return `400`.
 
-Invoice generation requires an Arabic-capable font available to ReportLab. The provided images install DejaVu fonts. A missing compatible font produces a sanitized `500` response.
+Invoice generation requires a Unicode font covering both Latin and Arabic scripts. The provided images install DejaVu fonts. Both invoice endpoints accept `lang=en|ar` (default `en`) and mirror the order fields shown in the storefront and admin UI. A missing compatible font produces a sanitized `500` response.
 
 ## Production checklist
 
@@ -137,7 +162,7 @@ Invoice generation requires an Arabic-capable font available to ReportLab. The p
 - Keep PostgreSQL and Adminer off public interfaces.
 - Persist and back up both PostgreSQL and the uploads volume together.
 - Apply migrations before accepting traffic; retain a tested restore plan.
-- Add proxy/application rate limits for login, refresh, checkout, and phone-history routes.
+- Tune `ORDER_HISTORY_RATE_*` for expected traffic; add proxy/application rate limits for login, refresh, and checkout.
 - Add monitoring, structured logs, database-aware readiness, and alerting.
 - Run multiple Uvicorn workers/processes as appropriate for expected load.
 
@@ -148,10 +173,21 @@ Invoice generation requires an Arabic-capable font available to ReportLab. The p
 - **CORS/browser cookie failure:** verify the exact origin, browser `credentials: "include"`, HTTPS, Secure, and SameSite settings.
 - **401 after login:** send the JSON access token in the Bearer header; the refresh cookie is not an access credential.
 - **Upload write failure:** make `UPLOAD_ROOT` writable and persistent.
-- **Invoice font error:** install/retain DejaVu or another configured Arabic-capable font.
+- **Invoice font error:** install/retain DejaVu or another Unicode font covering Latin and Arabic.
 - **409 on delete:** the record is protected by related data or an administrator-deletion rule.
 - **422 response:** inspect FastAPI's `detail` array and bind messages to the reported body/query/path field.
 
 ## Development notes
 
-Prices and fees are decimal strings in JSON; never calculate money with JavaScript floating point. Public catalog routes hide inactive records. Checkout trusts database prices, not client totals. Order history deliberately accepts only a normalized Palestinian mobile number and returns summary data with `Cache-Control: no-store`; it should be protected by deployment-level abuse controls.
+Prices and fees are decimal strings in JSON; never calculate money with JavaScript floating point. Public catalog routes hide inactive records. Checkout trusts database prices, not client totals. Guest order history requires the phone and public order number, exchanges them for a short-lived `order-history` token, and returns only that verified order with `Cache-Control: no-store`. Verification is rate limited per IP, per phone, and globally; this is a knowledge-based mitigation, not proof of phone ownership.
+
+## Tests
+
+Install the development dependencies and run pytest against a reachable PostgreSQL instance:
+
+```bash
+pip install -r requirements-dev.txt
+DATABASE_HOST=localhost python -m pytest tests -q
+```
+
+Each test runs inside a transaction that is rolled back, including rate-limit counters, so no rows are persisted. When PostgreSQL is reachable only from Compose, copy `tests/` into the `api` container and run `python -m pytest tests -q` there.

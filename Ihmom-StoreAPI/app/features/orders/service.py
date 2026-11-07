@@ -1,12 +1,16 @@
+
 import secrets
 from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
+from app.core.config import settings
+from app.core.security import OrderHistoryClaims, create_order_history_token
+from app.db import rate_limit
 from app.features.brands.model import Brand
 from app.features.categories.model import Category
 from app.features.customers.service import get_or_create_customer
@@ -14,35 +18,41 @@ from app.features.delivery_areas.model import DeliveryArea
 from app.features.orders.model import Order, OrderItem
 from app.features.orders.schema import (
     CheckoutRequest,
-    OrderFilters,
-    OrderSort,
+    OrderQuery,
+    OrderSortBy,
     OrderStatusUpdate,
-    SortOrder,
 )
 from app.features.products.model import Product, ProductVariant
 from app.shared import crud
+from app.constants.common import ZERO_MONEY
+from app.constants.orders import (
+    ORDER_INITIAL_STATUS,
+    ORDER_MONEY_MAX,
+    ORDER_MONEY_QUANTUM,
+    ORDER_NUMBER_ATTEMPTS,
+    ORDER_NUMBER_PREFIX,
+    ORDER_NUMBER_TOKEN_BYTES,
+    ORDER_STATUS_TRANSITIONS,
+)
+from app.constants.products import DEFAULT_VARIANT_NAME
+from app.constants.query import SortDirection
+from app.constants.rate_limit import (
+    ORDER_HISTORY_GLOBAL_SUBJECT,
+    ORDER_HISTORY_SCOPE_GLOBAL,
+    ORDER_HISTORY_SCOPE_IP,
+    ORDER_HISTORY_SCOPE_PHONE,
+)
 from app.shared.phone import normalize_phone, phone_identity
+from app.shared.search import like_pattern
+from app.shared.sorting import build_order_by
 
-
-MAX_MONEY = Decimal("99999999.99")
-MONEY_QUANTUM = Decimal("0.01")
-ORDER_NUMBER_ATTEMPTS = 5
-DEFAULT_VARIANT_NAME = "__default__"
-
-STATUS_TRANSITIONS = {
-    "pending": {"confirmed", "cancelled"},
-    "confirmed": {"out_for_delivery", "cancelled"},
-    "out_for_delivery": {"delivered", "cancelled"},
-    "delivered": set(),
-    "cancelled": set(),
-}
 
 SORTABLE_FIELDS = {
-    "id": Order.id,
-    "created_at": Order.created_at,
-    "total": Order.total,
-    "customer_name": Order.customer_name,
-    "status": Order.status,
+    OrderSortBy.ID: Order.id,
+    OrderSortBy.CREATED_AT: Order.created_at,
+    OrderSortBy.TOTAL: Order.total,
+    OrderSortBy.CUSTOMER_NAME: Order.customer_name,
+    OrderSortBy.STATUS: Order.status,
 }
 
 
@@ -55,17 +65,8 @@ def order_query(db: Session):
     )
 
 
-def _escape_search(value: str) -> str:
-    return (
-        value.strip()
-        .replace("\\", "\\\\")
-        .replace("%", "\\%")
-        .replace("_", "\\_")
-    )
-
-
 def _generate_order_number() -> str:
-    return f"IHM-{secrets.token_urlsafe(18)}"
+    return f"{ORDER_NUMBER_PREFIX}{secrets.token_urlsafe(ORDER_NUMBER_TOKEN_BYTES)}"
 
 
 def _is_order_number_collision(exc: IntegrityError) -> bool:
@@ -77,9 +78,9 @@ def _is_order_number_collision(exc: IntegrityError) -> bool:
 
 
 def _validate_money(value: Decimal, detail: str) -> Decimal:
-    if not value.is_finite() or value < 0 or value > MAX_MONEY:
+    if not value.is_finite() or value < 0 or value > ORDER_MONEY_MAX:
         raise HTTPException(status_code=422, detail=detail)
-    return value.quantize(MONEY_QUANTUM)
+    return value.quantize(ORDER_MONEY_QUANTUM)
 
 
 def _checkout_order(order: Order) -> dict:
@@ -187,7 +188,7 @@ def _build_order_items(
     variant_by_id: dict[int, ProductVariant],
 ):
     item_values = []
-    subtotal = Decimal("0.00")
+    subtotal = ZERO_MONEY
     for item in checkout_data.items:
         variant = variant_by_id[item.product_variant_id]
         unit_price = _validate_money(
@@ -289,12 +290,23 @@ def checkout(db: Session, checkout_data: CheckoutRequest):
             "subtotal": subtotal,
             "delivery_fee": delivery_fee,
             "total": total,
-            "status": "pending",
+            "status": ORDER_INITIAL_STATUS,
         }
         order = _insert_order_with_number_retry(db, order_values, item_values)
         db.commit()
         order = get_order(db, order.id)
-        return _checkout_order(order)
+        response = _checkout_order(order)
+        response["history_access_token"] = create_order_history_token(
+            order.customer_phone,
+            order.order_number,
+            timedelta(
+                minutes=settings.ORDER_HISTORY_TOKEN_EXPIRE_MINUTES,
+            ),
+        )
+        response["history_access_token_expires_in"] = (
+            settings.ORDER_HISTORY_TOKEN_EXPIRE_MINUTES * 60
+        )
+        return response
     except HTTPException:
         db.rollback()
         raise
@@ -309,63 +321,76 @@ def checkout(db: Session, checkout_data: CheckoutRequest):
         raise
 
 
-def get_orders(
-    db: Session,
-    page: int,
-    page_size: int,
-    search: str | None,
-    filters: OrderFilters,
-    sort_by: OrderSort,
-    sort_order: SortOrder,
-):
+def get_orders(db: Session, query_data: OrderQuery):
     query = order_query(db)
-    if search and search.strip():
-        search_text = search.strip()
+
+    if query_data.search:
+        search_text = query_data.search
         plain_order_number = search_text.removeprefix("#").strip()
-        term = f"%{_escape_search(search_text)}%"
-        order_number_term = f"%{_escape_search(plain_order_number)}%"
+        term = like_pattern(search_text)
+        order_number_term = like_pattern(plain_order_number)
         search_filters = [
-            Order.order_number.ilike(order_number_term, escape="\\"),
             Order.customer_name.ilike(term, escape="\\"),
             Order.customer_phone.ilike(term, escape="\\"),
         ]
+        if order_number_term is not None:
+            search_filters.append(
+                Order.order_number.ilike(order_number_term, escape="\\")
+            )
         try:
             normalized_phone = normalize_phone(search_text)
         except ValueError:
             normalized_phone = None
         if normalized_phone and normalized_phone != search_text:
-            normalized_term = f"%{_escape_search(normalized_phone)}%"
-            search_filters.append(
-                Order.customer_phone.ilike(normalized_term, escape="\\")
-            )
+            normalized_term = like_pattern(normalized_phone)
+            if normalized_term is not None:
+                search_filters.append(
+                    Order.customer_phone.ilike(normalized_term, escape="\\")
+                )
         query = query.filter(or_(*search_filters))
 
-    if filters.status is not None:
-        query = query.filter(Order.status == filters.status)
-    if filters.delivery_area_id is not None:
-        query = query.filter(Order.delivery_area_id == filters.delivery_area_id)
-    if filters.date_from is not None:
-        start = datetime.combine(filters.date_from, time.min, tzinfo=timezone.utc)
-        query = query.filter(Order.created_at >= start)
-    if filters.date_to is not None:
-        end = datetime.combine(filters.date_to, time.min, tzinfo=timezone.utc)
-        query = query.filter(Order.created_at < end + timedelta(days=1))
-    if filters.min_total is not None:
-        query = query.filter(Order.total >= filters.min_total)
-    if filters.max_total is not None:
-        query = query.filter(Order.total <= filters.max_total)
+    filters = query_data.filter
+    if filters is not None:
+        if filters.status is not None:
+            query = query.filter(Order.status == filters.status)
+        if filters.delivery_area_id is not None:
+            query = query.filter(
+                Order.delivery_area_id == filters.delivery_area_id
+            )
+        if filters.date_from is not None:
+            start = datetime.combine(
+                filters.date_from,
+                time.min,
+                tzinfo=timezone.utc,
+            )
+            query = query.filter(Order.created_at >= start)
+        if filters.date_to is not None:
+            end = datetime.combine(
+                filters.date_to,
+                time.min,
+                tzinfo=timezone.utc,
+            )
+            query = query.filter(
+                Order.created_at < end + timedelta(days=1)
+            )
+        if filters.min_total is not None:
+            query = query.filter(Order.total >= filters.min_total)
+        if filters.max_total is not None:
+            query = query.filter(Order.total <= filters.max_total)
 
-    sort_column = SORTABLE_FIELDS[sort_by]
-    order_method = sort_column.asc if sort_order == "asc" else sort_column.desc
-    id_order_method = Order.id.asc if sort_order == "asc" else Order.id.desc
-    order_by = [order_method()]
-    if sort_by != "id":
-        order_by.append(id_order_method())
+    sort_by = query_data.sort_by or OrderSortBy.CREATED_AT
+    order = query_data.order or SortDirection.DESC
+
     return crud.paginate(
         query,
-        page,
-        page_size,
-        order_by=order_by,
+        query_data.page,
+        query_data.page_size,
+        order_by=build_order_by(
+            SORTABLE_FIELDS[sort_by],
+            order,
+            Order.id,
+            sort_is_id=sort_by == OrderSortBy.ID,
+        ),
     )
 
 
@@ -380,43 +405,116 @@ def get_order_items(db: Session, order_id: int):
     return get_order(db, order_id).items
 
 
-def get_order_history(
+def enforce_order_history_rate_limit(
+    db: Session,
+    *,
+    client_ip: str,
+    phone: str,
+) -> None:
+    now = datetime.now(timezone.utc)
+    window_seconds = settings.ORDER_HISTORY_RATE_WINDOW_SECONDS
+    checks = (
+        (
+            ORDER_HISTORY_SCOPE_IP,
+            client_ip,
+            settings.ORDER_HISTORY_RATE_LIMIT_PER_IP,
+        ),
+        (
+            ORDER_HISTORY_SCOPE_PHONE,
+            phone_identity(phone),
+            settings.ORDER_HISTORY_RATE_LIMIT_PER_PHONE,
+        ),
+        (
+            ORDER_HISTORY_SCOPE_GLOBAL,
+            ORDER_HISTORY_GLOBAL_SUBJECT,
+            settings.ORDER_HISTORY_RATE_LIMIT_GLOBAL,
+        ),
+    )
+
+    for scope, subject, limit in checks:
+        retry_after = rate_limit.consume(
+            db,
+            scope=scope,
+            subject=subject,
+            limit=limit,
+            window_seconds=window_seconds,
+            now=now,
+        )
+        if retry_after is not None:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many verification attempts. Please try again later.",
+                headers={
+                    "Retry-After": str(retry_after),
+                    "Cache-Control": "no-store",
+                },
+            )
+
+
+def verify_order_history(
     db: Session,
     phone: str,
-    page: int,
-    page_size: int,
+    order_number: str,
+) -> Order:
+    order = (
+        db.query(Order)
+        .filter(
+            Order.order_number == order_number,
+            Order.customer_phone == phone_identity(phone),
+        )
+        .first()
+    )
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order details could not be verified",
+            headers={"Cache-Control": "no-store"},
+        )
+    return order
+
+
+def get_verified_order_history(
+    db: Session,
+    claims: OrderHistoryClaims,
 ):
-    identity = phone_identity(phone)
-    query = (
-        db.query(
-            Order.order_number.label("order_number"),
-            Order.status.label("status"),
-            Order.created_at.label("created_at"),
-            func.coalesce(func.sum(OrderItem.quantity), 0).label(
-                "total_quantity"
-            ),
-            Order.subtotal.label("subtotal"),
-            Order.delivery_fee.label("delivery_fee"),
-            Order.total.label("total"),
+    order = get_verified_order(db, claims)
+    return {
+        "order_number": order.order_number,
+        "status": order.status,
+        "created_at": order.created_at,
+        "customer_name": order.customer_name,
+        "customer_phone": order.customer_phone,
+        "delivery_area_name_ar": order.delivery_area.name_ar,
+        "delivery_area_name_en": order.delivery_area.name_en,
+        "address": order.address,
+        "notes": order.notes,
+        "total_quantity": sum(item.quantity for item in order.items),
+        "items": order.items,
+        "subtotal": order.subtotal,
+        "delivery_fee": order.delivery_fee,
+        "total": order.total,
+    }
+
+
+def get_verified_order(
+    db: Session,
+    claims: OrderHistoryClaims,
+):
+    order = (
+        order_query(db)
+        .filter(
+            Order.order_number == claims.order_number,
+            Order.customer_phone == claims.phone,
         )
-        .outerjoin(OrderItem, OrderItem.order_id == Order.id)
-        .filter(Order.customer_phone == identity)
-        .group_by(
-            Order.id,
-            Order.order_number,
-            Order.status,
-            Order.created_at,
-            Order.subtotal,
-            Order.delivery_fee,
-            Order.total,
+        .first()
+    )
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Verified order is no longer available",
+            headers={"Cache-Control": "no-store"},
         )
-    )
-    return crud.paginate(
-        query,
-        page,
-        page_size,
-        order_by=(Order.created_at.desc(), Order.id.desc()),
-    )
+    return order
 
 
 def update_order_status(
@@ -437,7 +535,7 @@ def update_order_status(
     if new_status == order.status:
         db.rollback()
         return get_order(db, order_id)
-    if new_status not in STATUS_TRANSITIONS[order.status]:
+    if new_status not in ORDER_STATUS_TRANSITIONS[order.status]:
         db.rollback()
         raise HTTPException(
             status_code=409,

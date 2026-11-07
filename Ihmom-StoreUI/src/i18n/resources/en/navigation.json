@@ -1,0 +1,46 @@
+{
+    "header": {
+        "home": "Home",
+        "shop": "Shop",
+        "myOrders": "My Orders",
+        "about": "About",
+        "contact": "Contact",
+        "mainLabel": "Main navigation",
+        "mobileLabel": "Mobile navigation",
+        "mobileLinksLabel": "Mobile navigation links",
+        "homeAriaLabel": "{{store}} home",
+        "search": "Search products",
+        "searchPlaceholder": "Search products…",
+        "searchSubmit": "Search",
+        "closeSearch": "Close search",
+        "cart": "Cart",
+        "cartWithCount_one": "Cart, {{count}} item",
+        "cartWithCount_other": "Cart, {{count}} items",
+        "visitStore": "Visit our store",
+        "openNavigation": "Open navigation",
+        "closeNavigation": "Close navigation",
+        "closeNavigationMenu": "Close navigation menu",
+        "browse": "Browse",
+        "quickActions": "Quick actions",
+        "viewCart": "View cart"
+    },
+    "footer": {
+        "explore": "Explore",
+        "customerCare": "Customer care",
+        "aboutUs": "About us",
+        "contactUs": "Contact us",
+        "deliveryInformation": "Delivery information",
+        "returnsExchanges": "Returns & exchanges",
+        "faqs": "FAQs",
+        "getInTouch": "Get in touch",
+        "openMap": "Open {{address}} in Google Maps",
+        "rightsReserved": "All rights reserved.",
+        "backToTop": "Back to top",
+        "trust": {
+            "securePayments": "Secure payments",
+            "fastDelivery": "Fast delivery",
+            "easyReturns": "Easy returns",
+            "qualityGuarantee": "Quality guarantee"
+        }
+    }
+}

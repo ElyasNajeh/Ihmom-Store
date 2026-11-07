@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "seed": "node scripts/seed.mjs",
+    "seed:local": "node scripts/seed.mjs --local"
+  },
   "dependencies": {
     "@base-ui/react": "^1.9.0"
   }

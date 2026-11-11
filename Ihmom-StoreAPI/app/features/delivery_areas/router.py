@@ -35,7 +35,7 @@ router = APIRouter(prefix="/delivery-areas", tags=["Delivery Areas"])
 def validate_delivery_area_query(
     request: Request,
     page: int = Query(1, ge=1, le=1000),
-    page_size: int = Query(12, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None, min_length=1, max_length=150),
     is_active: bool | None = Query(None, alias="filter[is_active]"),
     min_delivery_fee: Annotated[

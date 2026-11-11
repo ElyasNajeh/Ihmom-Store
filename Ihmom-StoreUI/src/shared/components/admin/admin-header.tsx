@@ -27,6 +27,7 @@ import ThemeToggle from '@/shared/components/app/theme-toggle.tsx';
 import { useAdminAuth } from '@/features/auth/context/admin-auth-context.ts';
 import { findActiveAdminNavItem } from '@/shared/components/admin/admin-navigation.ts';
 import { useScrolled } from '@/shared/hooks/useScrolled.ts';
+import { useAdminToast } from '@/shared/hooks/use-admin-toast.ts';
 import { cn } from '@/shared/lib/utils';
 
 function initials(value: string | undefined): string {
@@ -40,6 +41,7 @@ export function AdminHeader() {
     const { pathname } = useLocation();
     const navigate = useNavigate();
     const { admin, logout } = useAdminAuth();
+    const { showError } = useAdminToast();
     const [isSigningOut, setIsSigningOut] = useState(false);
     const isScrolled = useScrolled();
 
@@ -54,6 +56,8 @@ export function AdminHeader() {
         try {
             await logout();
             navigate('/admin/login', { replace: true });
+        } catch (error) {
+            showError(error);
         } finally {
             setIsSigningOut(false);
         }

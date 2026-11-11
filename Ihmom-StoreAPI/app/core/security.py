@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import bcrypt
-from fastapi import Depends, HTTPException, Security,Request
+from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -17,6 +17,7 @@ from app.constants.auth import (
 from app.core.config import settings
 from app.db.session import get_db
 from app.features.admins.model import Admin
+from app.features.auth.model import AdminSession
 from app.shared.phone import phone_identity
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -49,6 +50,7 @@ def create_token(
     data: dict,
     expires_delta: timedelta,
     token_type: str,
+    token_id: str | None = None,
 ) -> str:
     to_encode = data.copy()
 
@@ -58,7 +60,7 @@ def create_token(
         {
             "exp": expire,
             "iat": datetime.now(timezone.utc),
-            "jti": str(uuid4()),
+            "jti": token_id or str(uuid4()),
             "token_type": token_type,
         }
     )
@@ -72,7 +74,7 @@ def create_token(
     return encoded_jwt
 
 
-def verify_token(token: str, expected_token_type: str):
+def decode_token(token: str, expected_token_type: str) -> dict | None:
     try:
         payload = jwt.decode(
             token,
@@ -80,16 +82,17 @@ def verify_token(token: str, expected_token_type: str):
             algorithms=[settings.ALGORITHM],
         )
 
-        subject = payload.get("sub")
-        token_type = payload.get("token_type")
-
-        if subject is None or token_type != expected_token_type:
+        if payload.get("sub") is None or payload.get("token_type") != expected_token_type:
             return None
-
-        return subject
+        return payload
 
     except JWTError:
         return None
+
+
+def verify_token(token: str, expected_token_type: str):
+    payload = decode_token(token, expected_token_type)
+    return payload.get("sub") if payload is not None else None
 
 
 def create_order_history_token(
@@ -181,12 +184,12 @@ def get_order_history_claims(
 
 
 def _get_admin_from_token(token: str, db: Session) -> Admin:
-    subject = verify_token(
+    payload = decode_token(
         token,
         expected_token_type=TOKEN_TYPE_ACCESS,
     )
 
-    if subject is None:
+    if payload is None:
         raise HTTPException(
             status_code=401,
             detail="Invalid access token",
@@ -194,19 +197,33 @@ def _get_admin_from_token(token: str, db: Session) -> Admin:
         )
 
     try:
-        admin_id = int(subject)
+        admin_id = int(payload.get("sub"))
     except (TypeError, ValueError):
         admin_id = None
 
-    admin = db.query(Admin).filter(Admin.id == admin_id).first()
-    if admin is None:
+    session_id = payload.get("sid")
+    if not isinstance(session_id, str):
+        session_id = None
+
+    now = datetime.now(timezone.utc)
+    session = (
+        db.query(AdminSession)
+        .filter(
+            AdminSession.session_id == session_id,
+            AdminSession.admin_id == admin_id,
+            AdminSession.revoked_at.is_(None),
+            AdminSession.expires_at > now,
+        )
+        .first()
+    )
+    if session is None:
         raise HTTPException(
             status_code=401,
-            detail="Admin account no longer exists",
+            detail="Admin session is invalid or expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return admin
+    return session.admin
 
 
 def get_current_admin(

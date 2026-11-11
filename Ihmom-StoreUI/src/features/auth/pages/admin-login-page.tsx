@@ -6,13 +6,7 @@ import { useForm } from 'react-hook-form';
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, LockKeyhole, UserRound } from 'lucide-react';
 
 import { Button } from '@/shared/components/ui/button.tsx';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/shared/components/ui/card.tsx';
+import { Card, CardContent, CardDescription, CardHeader } from '@/shared/components/ui/card.tsx';
 import { Input } from '@/shared/components/ui/input.tsx';
 import { Label } from '@/shared/components/ui/label.tsx';
 import { Spinner } from '@/shared/components/ui/spinner.tsx';
@@ -25,6 +19,7 @@ import { loginAdminSchema } from '@/features/auth/schemas/auth.ts';
 import type { LoginAdmin } from '@/features/auth/types/auth.ts';
 import { ADMIN_LOGIN_FORM_DEFAULTS } from '@/features/admins/constants/admins.ts';
 import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { getApiErrorMessage } from '@/shared/utils/api-error.ts';
 import { getStoreName } from '@/features/storefront/constants/store.ts';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 
@@ -92,7 +87,7 @@ export default function AdminLoginPage() {
             setServerError(
                 status === 400 || status === 401
                     ? t('login.invalidCredentials')
-                    : t('login.genericError'),
+                    : (getApiErrorMessage(error) ?? t('login.genericError')),
             );
         } finally {
             setIsSubmitting(false);
@@ -157,7 +152,7 @@ export default function AdminLoginPage() {
 
                     <Card className="border-border/70 bg-card/95 shadow-xl backdrop-blur">
                         <CardHeader>
-                            <CardTitle className="text-xl">{t('login.title')}</CardTitle>
+                            <h1 className="text-xl font-semibold">{t('login.title')}</h1>
                             <CardDescription>{t('login.subtitle')}</CardDescription>
                         </CardHeader>
 

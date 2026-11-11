@@ -1,4 +1,5 @@
 from typing import Annotated
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -13,7 +14,7 @@ from pydantic import Field
 from sqlalchemy.orm import Session
 
 from app.constants.query import SortDirection
-from app.core.security import get_current_admin, get_optional_current_admin
+from app.core.security import get_current_admin
 from app.db.session import get_db
 from app.features.admins.model import Admin
 from app.features.products import service
@@ -27,8 +28,9 @@ from app.features.products.schema import (
     ProductVariantCreate,
     ProductVariantResponse,
     ProductVariantUpdate,
+    ProductSortBy,
     PublicProductListResponse,
-    PublicProductResponse, ProductSortBy,
+    PublicProductResponse,
 )
 from app.shared.query import QueryRules, parse_query
 
@@ -36,10 +38,11 @@ router = APIRouter(prefix="/products", tags=["Products"])
 
 ProductId = Annotated[int, Field(ge=1)]
 
+
 def validate_product_query(
     request: Request,
     page: int = Query(1, ge=1, le=1000),
-    page_size: int = Query(12, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None, min_length=1, max_length=200),
     category_id: int | None = Query(
         None,
@@ -104,19 +107,40 @@ def validate_product_query(
 
 @router.get(
     "/",
-    response_model=ProductListResponse | PublicProductListResponse,
+    response_model=PublicProductListResponse,
     response_model_exclude_none=True,
 )
 def get_products(
     query: Annotated[ProductQuery, Depends(validate_product_query)],
     db: Session = Depends(get_db),
-    current_admin: Admin | None = Depends(get_optional_current_admin),
 ):
-    return service.get_products_shared(
-        db,
-        query,
-        is_admin=current_admin is not None,
-    )
+    return service.get_products_shared(db, query, is_admin=False)
+
+
+@router.get(
+    "/admin/all",
+    response_model=ProductListResponse,
+    response_model_exclude_none=True,
+)
+def get_admin_products(
+    query: Annotated[ProductQuery, Depends(validate_product_query)],
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+):
+    return service.get_products_shared(db, query, is_admin=True)
+
+
+@router.get(
+    "/admin/{product_id}",
+    response_model=ProductResponse,
+    response_model_exclude_none=True,
+)
+def get_admin_product(
+    product_id: Annotated[int, Path(ge=1)],
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+):
+    return service.get_product_for_admin(db, product_id)
 
 
 @router.post(
@@ -147,19 +171,14 @@ def get_product_recommendations(
 
 @router.get(
     "/{product_id}",
-    response_model=ProductResponse | PublicProductResponse,
+    response_model=PublicProductResponse,
     response_model_exclude_none=True,
 )
 def get_product(
     product_id: Annotated[int, Path(ge=1)],
     db: Session = Depends(get_db),
-    current_admin: Admin | None = Depends(get_optional_current_admin),
 ):
-    return service.get_product_shared(
-        db,
-        product_id,
-        is_admin=current_admin is not None,
-    )
+    return service.get_product(db, product_id)
 
 
 @router.patch("/{product_id}", response_model=ProductResponse)

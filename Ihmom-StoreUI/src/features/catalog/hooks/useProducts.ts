@@ -69,6 +69,7 @@ export function useAdminProducts(params: QueryAdminProduct = {}) {
 export function useProduct(productId: number) {
     return useQuery({
         queryKey: [PRODUCT, 'public', productId],
+        enabled: Number.isInteger(productId) && productId > 0,
         queryFn: () => fetchProduct(productId),
     });
 }
@@ -84,6 +85,7 @@ export function useAdminProduct(productId: number, enabled = true) {
 export function useProductRecommendations(productId: number, limit = 4) {
     return useQuery({
         queryKey: [PRODUCT, productId, 'recommendations', limit],
+        enabled: Number.isInteger(productId) && productId > 0,
         queryFn: () => fetchProductRecommendations(productId, limit),
     });
 }

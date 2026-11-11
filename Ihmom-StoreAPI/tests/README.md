@@ -1,0 +1,45 @@
+# Backend test suite
+
+The suite is intentionally isolated from application data. Its disposable
+services are defined in `tests/docker-compose.test.yml`:
+
+- PostgreSQL: `127.0.0.1:55432`, database `ihmom_store_test`, tmpfs storage.
+- Redis: `127.0.0.1:57279`, database 15, persistence disabled, tmpfs storage.
+
+Neither service uses the application's persistent Docker volumes. Tests refuse
+database names that do not end in `_test`, flush only Redis database 15, and
+redirect uploads to a process-specific temporary directory before importing
+the application.
+
+## Windows PowerShell
+
+Run these commands from `Ihmom-StoreAPI`:
+
+```powershell
+docker compose -f tests/docker-compose.test.yml up -d --wait
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest
+```
+
+Useful selections:
+
+```powershell
+python -m pytest tests/unit
+python -m pytest tests/integration
+python -m pytest tests/e2e
+python -m pytest tests/integration/test_checkout_orders.py
+python -m pytest tests/integration/test_checkout_orders.py::test_same_idempotency_key_returns_original_order
+python -m pytest --cov=app --cov-branch --cov-report=term-missing
+```
+
+Stop only the disposable environment; do not add `-v`:
+
+```powershell
+docker compose -f tests/docker-compose.test.yml down
+```
+
+Checkout idempotency keys are retained for the lifetime of their order. A
+retry with the same normalized payload returns that order, while a different
+payload receives `409 Conflict`. Redis is required at startup and rate-limit
+checks fail closed with `503` if it becomes unavailable. See `TEST_REPORT.md`
+for the latest verified results and limitations.

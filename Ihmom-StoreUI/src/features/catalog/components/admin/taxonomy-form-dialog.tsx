@@ -11,7 +11,7 @@ import { Spinner } from '@/shared/components/ui/spinner.tsx';
 import { Switch } from '@/shared/components/ui/switch.tsx';
 import { AdminDialog } from '@/shared/components/admin/admin-dialog.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 import { orderBilingualFields } from '@/shared/utils/localized.ts';
 import type { FieldErrors, UseFormSetError } from 'react-hook-form';
 
@@ -91,7 +91,11 @@ export function TaxonomyFormDialog({
 
         try {
             await onSubmit(parsed.data);
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                name_ar: t('validation.required'),
+                name_en: t('validation.required'),
+            });
             // The parent mutation surfaces server errors through a toast.
         }
     });

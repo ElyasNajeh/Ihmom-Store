@@ -2,20 +2,24 @@
 from datetime import date, timedelta
 from decimal import Decimal
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Header,
     Path,
     Query,
     Request,
     status,
 )
 from fastapi.responses import Response
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.rate_limit import client_ip, enforce_checkout_limit
 from app.core.security import (
     OrderHistoryClaims,
     create_order_history_token,
@@ -76,7 +80,7 @@ def invoice_response(order: OrderModel, language: Language) -> Response:
 def validate_order_query(
     request: Request,
     page: int = Query(1, ge=1, le=1000),
-    page_size: int = Query(12, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None, min_length=1, max_length=150),
     filter_status: OrderStatus | None = Query(None, alias="filter[status]"),
     delivery_area_id: int | None = Query(
@@ -155,11 +159,20 @@ def validate_order_query(
     response_model=CheckoutOrderResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def checkout(
+async def checkout(
     checkout_data: CheckoutRequest,
+    request: Request,
+    idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
     db: Session = Depends(get_db),
 ):
-    return service.checkout(db, checkout_data)
+    canonical_key = str(idempotency_key)
+    await enforce_checkout_limit(client_ip(request), canonical_key)
+    return await run_in_threadpool(
+        service.checkout,
+        db,
+        checkout_data,
+        canonical_key,
+    )
 
 
 @router.post(

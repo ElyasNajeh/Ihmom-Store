@@ -54,12 +54,14 @@ const authApi: AxiosInstance = axios.create({
 });
 
 let accessToken: string | null = null;
+let authGeneration = 0;
 
 export function getAccessToken(): string | null {
     return accessToken;
 }
 
 export function setAccessToken(token: string | null): void {
+    authGeneration += 1;
     accessToken = token;
 }
 
@@ -75,15 +77,22 @@ let refreshPromise: Promise<string> | null = null;
 
 export function refreshAccessToken(): Promise<string> {
     if (!refreshPromise) {
+        const generation = authGeneration;
         refreshPromise = authApi
             .post<RefreshAdminResponse>('/auth/refresh')
             .then((response) => {
+                if (generation !== authGeneration) {
+                    throw new Error('Session changed during refresh');
+                }
+                if (typeof response.data.access_token !== 'string' || !response.data.access_token) {
+                    throw new Error('Invalid refresh response');
+                }
                 setAccessToken(response.data.access_token);
 
                 return response.data.access_token;
             })
             .catch((error: unknown) => {
-                setAccessToken(null);
+                if (generation === authGeneration) setAccessToken(null);
 
                 throw error;
             })
@@ -111,7 +120,8 @@ export function apiAssetUrl(path: string | null | undefined): string | null {
         return path;
     }
 
-    return new URL(path, `${origin}/`).toString();
+    const absoluteOrigin = new URL(origin, typeof window !== 'undefined' ? window.location.origin : undefined);
+    return new URL(path, absoluteOrigin).toString();
 }
 
 function isAuthEndpoint(url?: string): boolean {
@@ -142,6 +152,11 @@ api.interceptors.response.use(
         const config = error.config as
             (InternalAxiosRequestConfig & { retry?: boolean }) | undefined;
 
+        if (error.response?.status === 401 && config?.retry) {
+            setAccessToken(null);
+            emitSessionExpired();
+        }
+
         if (
             error.response?.status !== 401 ||
             !config ||
@@ -154,7 +169,8 @@ api.interceptors.response.use(
         config.retry = true;
 
         try {
-            await refreshAccessToken();
+            const token = await refreshAccessToken();
+            config.headers.Authorization = `Bearer ${token}`;
 
             return api(config);
         } catch {

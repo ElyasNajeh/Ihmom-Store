@@ -1,37 +1,22 @@
 import { Outlet, createBrowserRouter } from 'react-router-dom';
-import AboutContactPage from '@/features/storefront/pages/about-contact-page.tsx';
-import ContactPage from '@/features/support/pages/contact-page.tsx';
-import CustomerCarePage from '@/features/support/pages/customer-care-page.tsx';
-import DeliveryInformationPage from '@/features/support/pages/delivery-information-page.tsx';
-import FaqsPage from '@/features/support/pages/faqs-page.tsx';
-import HomePage from '@/features/storefront/pages/home-page.tsx';
-import MyOrdersPage from '@/features/orders/pages/store/my-orders-page.tsx';
-import ReturnsExchangesPage from '@/features/support/pages/returns-exchanges-page.tsx';
-import ProductDetailPage from '@/features/catalog/pages/store/product-detail-page.tsx';
-import CartPage from '@/features/cart/pages/cart-page.tsx';
-import CheckoutPage from '@/features/orders/pages/store/checkout-page.tsx';
 import { ShopRoute } from '@/app/router/shop-route.tsx';
-import AdminLoginPage from '@/features/auth/pages/admin-login-page.tsx';
-import AdminDashboardPage from '@/features/dashboard/pages/dashboard-page.tsx';
-import AdminCategoriesPage from '@/features/catalog/pages/admin/categories-page.tsx';
-import AdminBrandsPage from '@/features/catalog/pages/admin/brands-page.tsx';
-import AdminProductsPage from '@/features/catalog/pages/admin/products-page.tsx';
-import AdminProductEditorPage from '@/features/catalog/pages/admin/product-editor-page.tsx';
-import AdminSlidersPage from '@/features/catalog/pages/admin/sliders-page.tsx';
-import AdminCustomersPage from '@/features/customers/pages/customers-page.tsx';
-import AdminDeliveryAreasPage from '@/features/delivery/pages/admin/delivery-areas-page.tsx';
-import AdminAdminsPage from '@/features/admins/pages/admins-page.tsx';
-import AdminOrdersPage from '@/features/orders/pages/admin/orders-page.tsx';
-import AdminOrderDetailPage from '@/features/orders/pages/admin/order-detail-page.tsx';
 import { AdminAuthProvider } from '@/app/providers/AdminAuthProvider.tsx';
 import { RedirectIfAuthenticated, RequireAdmin } from '@/app/router/guards.tsx';
 import { AdminLayout } from '@/app/layouts/admin-layout.tsx';
 import { StoreLayout } from '@/app/layouts/store-layout.tsx';
 import { RouteErrorPage } from '@/app/errors/route-error-page.tsx';
+import { Spinner } from '@/shared/components/app/spinner.tsx';
+
+const routeFallback = (
+    <div className="flex min-h-dvh items-center justify-center">
+        <Spinner />
+    </div>
+);
 
 export const router = createBrowserRouter([
     {
         path: '/',
+        hydrateFallbackElement: routeFallback,
         errorElement: <RouteErrorPage />,
         children: [
             {
@@ -39,11 +24,18 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         index: true,
-                        element: <HomePage />,
+                        lazy: async () => ({
+                            Component: (await import('@/features/storefront/pages/home-page.tsx'))
+                                .default,
+                        }),
                     },
                     {
                         path: 'about',
-                        element: <AboutContactPage />,
+                        lazy: async () => ({
+                            Component: (
+                                await import('@/features/storefront/pages/about-contact-page.tsx')
+                            ).default,
+                        }),
                     },
                     {
                         path: 'shop',
@@ -51,45 +43,75 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: 'shop/:productId',
-                        element: <ProductDetailPage />,
+                        lazy: async () => ({
+                            Component: (
+                                await import('@/features/catalog/pages/store/product-detail-page.tsx')
+                            ).default,
+                        }),
                     },
                     {
                         path: 'cart',
-                        element: <CartPage />,
+                        lazy: async () => ({
+                            Component: (await import('@/features/cart/pages/cart-page.tsx'))
+                                .default,
+                        }),
                     },
                     {
                         path: 'checkout',
-                        element: <CheckoutPage />,
+                        lazy: async () => ({
+                            Component: (
+                                await import('@/features/orders/pages/store/checkout-page.tsx')
+                            ).default,
+                        }),
                     },
                     {
                         path: 'my-orders',
-                        element: <MyOrdersPage />,
+                        lazy: async () => ({
+                            Component: (
+                                await import('@/features/orders/pages/store/my-orders-page.tsx')
+                            ).default,
+                        }),
                     },
                 ],
             },
             {
                 path: 'customer-care',
-                element: <CustomerCarePage />,
+                lazy: async () => ({
+                    Component: (await import('@/features/support/pages/customer-care-page.tsx'))
+                        .default,
+                }),
             },
             {
                 path: 'contact',
-                element: <ContactPage />,
+                lazy: async () => ({
+                    Component: (await import('@/features/support/pages/contact-page.tsx')).default,
+                }),
             },
             {
                 path: 'delivery',
-                element: <DeliveryInformationPage />,
+                lazy: async () => ({
+                    Component: (
+                        await import('@/features/support/pages/delivery-information-page.tsx')
+                    ).default,
+                }),
             },
             {
                 path: 'returns',
-                element: <ReturnsExchangesPage />,
+                lazy: async () => ({
+                    Component: (await import('@/features/support/pages/returns-exchanges-page.tsx'))
+                        .default,
+                }),
             },
             {
                 path: 'faq',
-                element: <FaqsPage />,
+                lazy: async () => ({
+                    Component: (await import('@/features/support/pages/faqs-page.tsx')).default,
+                }),
             },
         ],
     },
     {
+        hydrateFallbackElement: routeFallback,
         element: (
             <AdminAuthProvider>
                 <Outlet />
@@ -102,7 +124,10 @@ export const router = createBrowserRouter([
                 children: [
                     {
                         path: 'admin/login',
-                        element: <AdminLoginPage />,
+                        lazy: async () => ({
+                            Component: (await import('@/features/auth/pages/admin-login-page.tsx'))
+                                .default,
+                        }),
                     },
                 ],
             },
@@ -115,51 +140,99 @@ export const router = createBrowserRouter([
                         children: [
                             {
                                 index: true,
-                                element: <AdminDashboardPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/dashboard/pages/dashboard-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'products',
-                                element: <AdminProductsPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/catalog/pages/admin/products-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'products/new',
-                                element: <AdminProductEditorPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/catalog/pages/admin/product-editor-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'products/:productId',
-                                element: <AdminProductEditorPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/catalog/pages/admin/product-editor-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'categories',
-                                element: <AdminCategoriesPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/catalog/pages/admin/categories-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'brands',
-                                element: <AdminBrandsPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/catalog/pages/admin/brands-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'sliders',
-                                element: <AdminSlidersPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/catalog/pages/admin/sliders-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'customers',
-                                element: <AdminCustomersPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/customers/pages/customers-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'delivery-areas',
-                                element: <AdminDeliveryAreasPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/delivery/pages/admin/delivery-areas-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'admins',
-                                element: <AdminAdminsPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/admins/pages/admins-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'orders',
-                                element: <AdminOrdersPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/orders/pages/admin/orders-page.tsx')
+                                    ).default,
+                                }),
                             },
                             {
                                 path: 'orders/:orderId',
-                                element: <AdminOrderDetailPage />,
+                                lazy: async () => ({
+                                    Component: (
+                                        await import('@/features/orders/pages/admin/order-detail-page.tsx')
+                                    ).default,
+                                }),
                             },
                         ],
                     },

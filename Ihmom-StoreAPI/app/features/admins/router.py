@@ -10,6 +10,7 @@ from app.features.admins import service
 from app.features.admins.model import Admin
 from app.features.admins.schema import AdminCreate, AdminResponse, AdminQuery, AdminSortBy
 from app.constants.query import SortDirection
+from app.constants.query import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from app.shared.query import QueryRules, parse_query
 from app.shared.schema import PageResponse
 
@@ -24,7 +25,7 @@ router = APIRouter(
 def validate_admin_query(
     request: Request,
     page: int = Query(1, ge=1),
-    page_size: int = Query(12, ge=1),
+    page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     search: str | None = Query(None, min_length=1, max_length=200),
     sort_by: AdminSortBy | None = Query(None),
     order: SortDirection | None = Query(None),
@@ -41,7 +42,6 @@ def validate_admin_query(
         },
         rules=QueryRules.create(
             declared={"page", "page_size", "search", "sort_by", "order"},
-            carry_unknown=False,
         ),
     )
 

@@ -29,7 +29,7 @@ import type {
     UpdateProduct,
 } from '@/features/catalog/types/product.ts';
 import { createProductSchema, updateProductSchema } from '@/features/catalog/schemas/products.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 import { localizedName, orderBilingualFields } from '@/shared/utils/localized.ts';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import type { UseFormSetError } from 'react-hook-form';
@@ -433,7 +433,13 @@ export function ProductCreateForm({
 
         try {
             await onSubmit(parsed.data);
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                name_ar: t('validation.invalidField'),
+                name_en: t('validation.invalidField'),
+                category_id: t('validation.invalidField'),
+                brand_id: t('validation.invalidField'),
+            });
             // The parent mutation reports server errors through a toast.
         }
     });
@@ -732,7 +738,13 @@ export function ProductEditForm({
 
         try {
             await onSubmit(parsed.data);
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                name_ar: t('validation.invalidField'),
+                name_en: t('validation.invalidField'),
+                category_id: t('validation.invalidField'),
+                brand_id: t('validation.invalidField'),
+            });
             // The parent mutation reports server errors through a toast.
         }
     });

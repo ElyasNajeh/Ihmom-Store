@@ -1,7 +1,14 @@
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_admin
+from app.core.rate_limit import (
+    clear_login_account_failures,
+    client_ip,
+    enforce_login_limit,
+    record_login_failure,
+)
 from app.db.session import get_db
 from app.features.auth import service
 from app.features.admins.model import Admin
@@ -33,12 +40,23 @@ router = APIRouter(
         401: {"description": "Invalid username or password."},
     },
 )
-def login(
+async def login(
     login_data: LoginRequest,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
 ):
-    return service.login(db, login_data, response)
+    identifier = login_data.username.strip()
+    ip_address = client_ip(request)
+    await enforce_login_limit(identifier, ip_address)
+    try:
+        result = await run_in_threadpool(service.login, db, login_data, response)
+    except HTTPException as exc:
+        if exc.status_code == 401:
+            await record_login_failure(identifier, ip_address)
+        raise
+    await clear_login_account_failures(identifier)
+    return result
 
 
 @router.post(
@@ -57,12 +75,14 @@ def login(
         403: {"description": "Request origin is not allowed."},
     },
 )
-def refresh_access_token(
+async def refresh_access_token(
     request: Request,
     response: Response,
     db: Session = Depends(get_db),
 ):
-    return service.refresh_access_token(request, response, db)
+    return await run_in_threadpool(
+        service.refresh_access_token, request, response, db
+    )
 
 
 @router.post(
@@ -79,8 +99,12 @@ def refresh_access_token(
         403: {"description": "Request origin is not allowed."},
     },
 )
-def logout(request: Request, response: Response):
-    return service.logout(request, response)
+async def logout(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    return await run_in_threadpool(service.logout, request, response, db)
 
 
 @router.get(

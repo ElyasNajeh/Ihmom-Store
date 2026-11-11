@@ -1,9 +1,12 @@
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
+from app.core.rate_limit import close_redis, verify_redis
 from app.features.admins.router import router as admins_router
 from app.features.auth.router import router as auth_router
 from app.features.brands.router import router as brands_router
@@ -67,6 +70,15 @@ openapi_tags = [
 
 settings.UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    await verify_redis()
+    try:
+        yield
+    finally:
+        await close_redis()
+
 app = FastAPI(
     title=settings.APP_NAME,
     description=(
@@ -79,6 +91,7 @@ app = FastAPI(
     ),
     version="1.0.0",
     openapi_tags=openapi_tags,
+    lifespan=lifespan,
 )
 
 app.add_middleware(

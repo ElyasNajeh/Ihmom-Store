@@ -13,7 +13,7 @@ import { AdminDialog } from '@/shared/components/admin/admin-dialog.tsx';
 import { AdminImagePicker } from '@/shared/components/admin/admin-image-picker.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import type { Slider } from '@/features/catalog/types/slider.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 import { orderBilingualFields } from '@/shared/utils/localized.ts';
 import { apiAssetUrl } from '@/shared/api/axios.ts';
 
@@ -112,7 +112,12 @@ export function SliderFormDialog({
 
         try {
             await onSubmit(parsed.data, files[0] ?? null);
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                title_ar: t('validation.invalidField'),
+                title_en: t('validation.invalidField'),
+                display_order: t('validation.invalidField'),
+            });
             // The parent mutation surfaces server errors through a toast.
         }
     });

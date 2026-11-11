@@ -9,6 +9,7 @@ from app.constants.query import (
     DEFAULT_PAGE,
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_NUMBER,
+    MAX_PAGE_SIZE,
     SortDirection,
 )
 
@@ -48,5 +49,5 @@ class QueryBase(BaseModel):
     filter: dict[str, Any] | None = None
     sort_by: str | None = None
     order: SortDirection | None = None
-    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=1)
+    page_size: int = Field(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE)
     page: int = Field(default=DEFAULT_PAGE, ge=1, le=MAX_PAGE_NUMBER)

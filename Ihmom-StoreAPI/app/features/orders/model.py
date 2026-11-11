@@ -21,7 +21,7 @@ from app.constants.orders import (
     ORDER_STATUS_CHECK_SQL,
     ORDER_STATUS_COLUMN_LENGTH,
 )
-from app.constants.products import DEFAULT_VARIANT_NAME
+from app.constants.products import PRODUCT_NAME_MAX_LENGTH, PRODUCT_VARIANT_NAME_MAX_LENGTH
 from app.db.base import Base
 from app.db.mixins import BigIntIdMixin, CreatedAtMixin
 
@@ -41,6 +41,7 @@ class Order(BigIntIdMixin, CreatedAtMixin, Base):
         CheckConstraint("total >= 0", name="ck_orders_total_nonnegative"),
         Index("ix_orders_customer_phone", "customer_phone"),
         Index("ix_orders_status", "status"),
+        Index("uq_orders_idempotency_key", "idempotency_key", unique=True),
     )
 
     order_number = Column(
@@ -48,6 +49,8 @@ class Order(BigIntIdMixin, CreatedAtMixin, Base):
         nullable=False,
         unique=True,
     )
+    idempotency_key = Column(String(36), nullable=True)
+    request_fingerprint = Column(String(64), nullable=True)
     customer_id = Column(
         BigInteger,
         ForeignKey("customers.id"),
@@ -120,6 +123,10 @@ class OrderItem(BigIntIdMixin, CreatedAtMixin, Base):
         ForeignKey("product_variants.id"),
         nullable=False,
     )
+    product_name_ar = Column(String(PRODUCT_NAME_MAX_LENGTH), nullable=False)
+    product_name_en = Column(String(PRODUCT_NAME_MAX_LENGTH), nullable=False)
+    variant_name_ar = Column(String(PRODUCT_VARIANT_NAME_MAX_LENGTH), nullable=True)
+    variant_name_en = Column(String(PRODUCT_VARIANT_NAME_MAX_LENGTH), nullable=True)
     quantity = Column(Integer, nullable=False)
     unit_price = Column(
         Numeric(MONEY_MAX_DIGITS, MONEY_DECIMAL_PLACES),
@@ -132,30 +139,3 @@ class OrderItem(BigIntIdMixin, CreatedAtMixin, Base):
 
     order = relationship("Order", back_populates="items")
     product_variant = relationship("ProductVariant", back_populates="order_items")
-
-    @property
-    def product_name_ar(self) -> str:
-        return self.product_variant.product.name_ar
-
-    @property
-    def product_name_en(self) -> str:
-        return self.product_variant.product.name_en
-
-    @property
-    def variant_name_ar(self) -> str | None:
-        if self._is_default_variant:
-            return None
-        return self.product_variant.name_ar
-
-    @property
-    def variant_name_en(self) -> str | None:
-        if self._is_default_variant:
-            return None
-        return self.product_variant.name_en
-
-    @property
-    def _is_default_variant(self) -> bool:
-        return (
-            self.product_variant.name_ar == DEFAULT_VARIANT_NAME
-            and self.product_variant.name_en == DEFAULT_VARIANT_NAME
-        )

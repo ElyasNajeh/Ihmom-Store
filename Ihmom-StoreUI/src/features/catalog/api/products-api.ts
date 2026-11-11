@@ -31,7 +31,7 @@ export async function fetchProducts(
 export async function fetchAdminProducts(
     params: QueryAdminProduct,
 ): Promise<PaginatedResponse<Product>> {
-    const response = await api.get<PaginatedResponse<Product>>('/products/', {
+    const response = await api.get<PaginatedResponse<Product>>('/products/admin/all', {
         params,
         paramsSerializer: productParamsSerializer,
     });
@@ -46,7 +46,7 @@ export async function fetchProduct(productId: number): Promise<PublicProduct> {
 }
 
 export async function fetchAdminProduct(productId: number): Promise<Product> {
-    const response = await api.get<Product>(`/products/${productId}`);
+    const response = await api.get<Product>(`/products/admin/${productId}`);
 
     return response.data;
 }

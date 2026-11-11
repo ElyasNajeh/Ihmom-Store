@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String
+from sqlalchemy.orm import relationship
 
 from app.constants.admins import (
     ADMIN_EMAIL_MAX_LENGTH,
@@ -27,4 +28,11 @@ class Admin(BigIntIdMixin, CreatedAtMixin, Base):
     hashed_password = Column(
         String(ADMIN_PASSWORD_HASH_MAX_LENGTH),
         nullable=False,
+    )
+
+    sessions = relationship(
+        "AdminSession",
+        back_populates="admin",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

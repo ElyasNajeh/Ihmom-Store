@@ -3,6 +3,17 @@ name: ihmom-store
 
 services:
 
+  redis:
+    image: redis:8.2-alpine
+    container_name: ihmom-store-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # =========================
   # PostgreSQL
   # =========================
@@ -80,6 +91,8 @@ services:
 
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
     # Apply migrations before starting FastAPI

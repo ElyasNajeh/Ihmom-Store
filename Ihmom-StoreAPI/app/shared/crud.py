@@ -85,10 +85,18 @@ def paginate(
     }
 
 
-def create(db: Session, db_obj: ModelType) -> ModelType:
+def create(
+    db: Session,
+    db_obj: ModelType,
+    *,
+    commit: bool = True,
+) -> ModelType:
     db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
+    if commit:
+        db.commit()
+        db.refresh(db_obj)
+    else:
+        db.flush()
     return db_obj
 
 

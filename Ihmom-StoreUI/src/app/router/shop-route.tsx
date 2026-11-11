@@ -6,5 +6,5 @@ import ShopPage from '@/features/catalog/pages/store/shop-page.tsx';
 export function ShopRoute() {
     const location = useLocation();
 
-    return <ShopPage key={location.search} />;
+    return <ShopPage key={new URLSearchParams(location.search).get('search') ?? ''} />;
 }

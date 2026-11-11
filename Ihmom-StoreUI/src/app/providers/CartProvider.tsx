@@ -16,7 +16,11 @@ const cartItemSchema = z.object({
     nameEn: z.string(),
     variantNameAr: z.string().nullable().default(null),
     variantNameEn: z.string().nullable().default(null),
-    price: z.string(),
+    price: z
+        .string()
+        .refine(
+            (value) => value.trim() !== '' && Number.isFinite(Number(value)) && Number(value) >= 0,
+        ),
     image: z.string().nullable(),
     quantity: z.number().int().min(1).max(MAX_CART_QUANTITY),
 });
@@ -46,6 +50,7 @@ function readStoredCart(): CartItem[] {
 }
 
 function clampQuantity(quantity: number): number {
+    if (!Number.isFinite(quantity)) return 1;
     return Math.min(MAX_CART_QUANTITY, Math.max(1, Math.round(quantity)));
 }
 
@@ -84,6 +89,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const setQuantity = useCallback((variantId: number, quantity: number) => {
+        if (!Number.isFinite(quantity)) return;
         if (quantity < 1) {
             setItems((current) => current.filter((entry) => entry.variantId !== variantId));
             return;

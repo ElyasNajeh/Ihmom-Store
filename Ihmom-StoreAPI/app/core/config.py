@@ -15,10 +15,19 @@ class Settings(BaseSettings):
     DATABASE_PASSWORD: str
     DATABASE_NAME: str
 
+    REDIS_URL: str = "redis://redis:6379/0"
+    LOGIN_RATE_WINDOW_SECONDS: int = Field(default=900, ge=1)
+    LOGIN_RATE_LIMIT_PER_ACCOUNT: int = Field(default=5, ge=1)
+    LOGIN_RATE_LIMIT_PER_IP: int = Field(default=20, ge=1)
+    CHECKOUT_RATE_WINDOW_SECONDS: int = Field(default=60, ge=1)
+    CHECKOUT_RATE_LIMIT_PER_IP: int = Field(default=30, ge=1)
+    RATE_LIMIT_KEY_PREFIX: str = "ihmom:rate-limit"
+
     SECRET_KEY: str
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, gt=0)
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, gt=0)
+    ADMIN_SESSION_RETENTION_DAYS: int = Field(default=30, ge=1)
 
     ORDER_HISTORY_TOKEN_EXPIRE_MINUTES: int = Field(
         default=10,

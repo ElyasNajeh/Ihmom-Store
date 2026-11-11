@@ -10,7 +10,7 @@ import { Spinner } from '@/shared/components/ui/spinner.tsx';
 import { AdminDialog } from '@/shared/components/admin/admin-dialog.tsx';
 import type { Customer } from '@/features/customers/types/customer.ts';
 import { createCustomerSchema } from '@/features/customers/schemas/customers.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 
 export interface CustomerFormValues {
     name: string;
@@ -64,7 +64,11 @@ export function CustomerFormDialog({
 
         try {
             await onSubmit(parsed.data);
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                name: t('validation.required'),
+                phone: t('validation.phone'),
+            });
             // The parent mutation surfaces server errors through a toast.
         }
     });

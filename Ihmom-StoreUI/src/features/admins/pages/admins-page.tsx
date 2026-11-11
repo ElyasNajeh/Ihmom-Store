@@ -63,6 +63,7 @@ export default function AdminAdminsPage() {
             setFormOpen(false);
         } catch (error) {
             showError(error);
+            throw error;
         }
     };
 

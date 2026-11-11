@@ -81,7 +81,12 @@ def _list_delivery_areas(
     )
 
 
-def create_delivery_area(db: Session, area_data: DeliveryAreaCreate):
+def create_delivery_area(
+    db: Session,
+    area_data: DeliveryAreaCreate,
+    *,
+    commit: bool = True,
+):
     data = area_data.model_dump()
     ensure_unique_names(
         db,
@@ -93,7 +98,7 @@ def create_delivery_area(db: Session, area_data: DeliveryAreaCreate):
 
     area = DeliveryArea(**data)
     try:
-        return crud.create(db, area)
+        return crud.create(db, area, commit=commit)
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(

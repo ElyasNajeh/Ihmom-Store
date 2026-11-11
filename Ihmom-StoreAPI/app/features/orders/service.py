@@ -1,5 +1,7 @@
 
 import secrets
+import hashlib
+import json
 from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal
 
@@ -97,6 +99,47 @@ def _checkout_order(order: Order) -> dict:
         "delivery_fee": order.delivery_fee,
         "total": order.total,
     }
+
+
+def _checkout_response(order: Order) -> dict:
+    response = _checkout_order(order)
+    response["history_access_token"] = create_order_history_token(
+        order.customer_phone,
+        order.order_number,
+        timedelta(minutes=settings.ORDER_HISTORY_TOKEN_EXPIRE_MINUTES),
+    )
+    response["history_access_token_expires_in"] = (
+        settings.ORDER_HISTORY_TOKEN_EXPIRE_MINUTES * 60
+    )
+    return response
+
+
+def _request_fingerprint(checkout_data: CheckoutRequest) -> str:
+    canonical = json.dumps(
+        checkout_data.model_dump(mode="json"),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _get_idempotent_order(
+    db: Session,
+    idempotency_key: str,
+    fingerprint: str,
+) -> Order | None:
+    order = (
+        order_query(db)
+        .filter(Order.idempotency_key == idempotency_key)
+        .first()
+    )
+    if order is not None and order.request_fingerprint != fingerprint:
+        raise HTTPException(
+            status_code=409,
+            detail="Idempotency key was already used with a different checkout payload",
+        )
+    return order
 
 
 def _lock_checkout_catalog(
@@ -206,6 +249,20 @@ def _build_order_items(
         item_values.append(
             {
                 "product_variant_id": variant.id,
+                "product_name_ar": variant.product.name_ar,
+                "product_name_en": variant.product.name_en,
+                "variant_name_ar": (
+                    None
+                    if variant.name_ar == DEFAULT_VARIANT_NAME
+                    and variant.name_en == DEFAULT_VARIANT_NAME
+                    else variant.name_ar
+                ),
+                "variant_name_en": (
+                    None
+                    if variant.name_ar == DEFAULT_VARIANT_NAME
+                    and variant.name_en == DEFAULT_VARIANT_NAME
+                    else variant.name_en
+                ),
                 "quantity": item.quantity,
                 "unit_price": unit_price,
                 "total": item_total,
@@ -240,8 +297,17 @@ def _insert_order_with_number_retry(
     )
 
 
-def checkout(db: Session, checkout_data: CheckoutRequest):
+def checkout(
+    db: Session,
+    checkout_data: CheckoutRequest,
+    idempotency_key: str,
+):
+    fingerprint = _request_fingerprint(checkout_data)
     try:
+        existing = _get_idempotent_order(db, idempotency_key, fingerprint)
+        if existing is not None:
+            return _checkout_response(existing)
+
         phone = normalize_phone(checkout_data.customer_phone)
         delivery_area = (
             db.query(DeliveryArea)
@@ -291,27 +357,24 @@ def checkout(db: Session, checkout_data: CheckoutRequest):
             "delivery_fee": delivery_fee,
             "total": total,
             "status": ORDER_INITIAL_STATUS,
+            "idempotency_key": idempotency_key,
+            "request_fingerprint": fingerprint,
         }
         order = _insert_order_with_number_retry(db, order_values, item_values)
         db.commit()
         order = get_order(db, order.id)
-        response = _checkout_order(order)
-        response["history_access_token"] = create_order_history_token(
-            order.customer_phone,
-            order.order_number,
-            timedelta(
-                minutes=settings.ORDER_HISTORY_TOKEN_EXPIRE_MINUTES,
-            ),
-        )
-        response["history_access_token_expires_in"] = (
-            settings.ORDER_HISTORY_TOKEN_EXPIRE_MINUTES * 60
-        )
-        return response
+        return _checkout_response(order)
     except HTTPException:
         db.rollback()
         raise
     except IntegrityError as exc:
+        diagnostic = getattr(exc.orig, "diag", None)
+        constraint = getattr(diagnostic, "constraint_name", "") or ""
         db.rollback()
+        if constraint == "uq_orders_idempotency_key":
+            existing = _get_idempotent_order(db, idempotency_key, fingerprint)
+            if existing is not None:
+                return _checkout_response(existing)
         raise HTTPException(
             status_code=409,
             detail="Checkout could not be completed because related data changed",

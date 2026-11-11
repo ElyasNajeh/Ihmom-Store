@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
             retry: (failureCount, error) => {
                 if (axios.isAxiosError(error)) {
                     const status = error.response?.status;
-                    if (status === 404 || status === 409) {
+                    if (status && status >= 400 && status < 500) {
                         return false;
                     }
                 }
@@ -47,6 +47,7 @@ const queryClient = new QueryClient({
         },
         mutations: {
             retry: false,
+            networkMode: 'always',
         },
     },
 });

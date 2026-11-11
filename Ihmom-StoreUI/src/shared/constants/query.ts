@@ -1,6 +1,6 @@
 export const DEFAULT_PAGE = 1;
 
-export const DEFAULT_PAGE_SIZE = 12;
+export const DEFAULT_PAGE_SIZE = 20;
 
 export const SEARCH_DEBOUNCE_MS = 300;
 
@@ -11,7 +11,7 @@ export const FETCH_ALL_PARAMS = {
     page_size: FETCH_ALL_PAGE_SIZE,
 } as const;
 
-export const PAGE_SIZE_OPTIONS = [12, 24, 48, 100] as const;
+export const PAGE_SIZE_OPTIONS = [20, 40, 60, 100] as const;
 
 export const FILTER_ALL = 'all';
 

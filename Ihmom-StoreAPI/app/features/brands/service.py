@@ -66,7 +66,12 @@ def _list_brands(
     )
 
 
-def create_brand(db: Session, brand_data: BrandCreate):
+def create_brand(
+    db: Session,
+    brand_data: BrandCreate,
+    *,
+    commit: bool = True,
+):
     data = brand_data.model_dump()
     ensure_unique_names(
         db,
@@ -78,7 +83,7 @@ def create_brand(db: Session, brand_data: BrandCreate):
 
     brand = Brand(**data)
     try:
-        return crud.create(db, brand)
+        return crud.create(db, brand, commit=commit)
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(

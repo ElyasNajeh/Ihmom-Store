@@ -17,6 +17,7 @@ from app.features.sliders.schema import (
     SliderUpdate, SliderSortBy,
 )
 from app.shared.query import QueryRules, parse_query
+from app.constants.query import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 
 
 router = APIRouter(prefix="/sliders", tags=["Sliders"])
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/sliders", tags=["Sliders"])
 def validate_slider_query(
     request: Request,
     page: int = Query(1, ge=1),
-    page_size: int = Query(12, ge=1),
+    page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
     search: str | None = Query(None),
     is_active: bool | None = Query(None, alias="filter[is_active]"),
     display_order: int | None = Query(None, alias="filter[display_order]"),

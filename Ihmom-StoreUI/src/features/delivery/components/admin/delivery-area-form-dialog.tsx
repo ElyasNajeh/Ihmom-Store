@@ -12,7 +12,7 @@ import { Switch } from '@/shared/components/ui/switch.tsx';
 import { AdminDialog } from '@/shared/components/admin/admin-dialog.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import type { DeliveryArea } from '@/features/delivery/types/delivery-area.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 import { orderBilingualFields } from '@/shared/utils/localized.ts';
 
 export interface DeliveryAreaFormValues {
@@ -113,7 +113,12 @@ export function DeliveryAreaFormDialog({
 
         try {
             await onSubmit(parsed.data);
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                name_ar: t('validation.invalidField'),
+                name_en: t('validation.invalidField'),
+                delivery_fee: t('validation.amount'),
+            });
             // The parent mutation surfaces server errors through a toast.
         }
     });

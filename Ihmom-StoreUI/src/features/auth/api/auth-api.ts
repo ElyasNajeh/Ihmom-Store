@@ -26,13 +26,11 @@ export async function restoreAdminSession(): Promise<CurrentAdmin> {
     return fetchCurrentAdmin();
 }
 
-export async function logoutAdmin(): Promise<MessageResponse | null> {
+export async function logoutAdmin(): Promise<MessageResponse> {
     try {
         const response = await api.post<MessageResponse>('/auth/logout');
 
         return response.data;
-    } catch {
-        return null;
     } finally {
         setAccessToken(null);
     }

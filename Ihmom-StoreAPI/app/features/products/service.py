@@ -346,7 +346,12 @@ def get_product_shared(
     return get_product(db, product_id)
 
 
-def create_product(db: Session, product_data: ProductCreate):
+def create_product(
+    db: Session,
+    product_data: ProductCreate,
+    *,
+    commit: bool = True,
+):
     _ensure_category_and_brand(
         db,
         product_data.category_id,
@@ -386,7 +391,10 @@ def create_product(db: Session, product_data: ProductCreate):
             ProductVariant(product_id=product.id, **values)
             for values in variant_values
         )
-        db.commit()
+        if commit:
+            db.commit()
+        else:
+            db.flush()
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(

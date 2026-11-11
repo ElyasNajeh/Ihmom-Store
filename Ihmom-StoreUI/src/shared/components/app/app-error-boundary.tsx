@@ -1,6 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/shared/components/ui/button.tsx';
@@ -25,7 +24,7 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                     <Button onClick={onRetry}>{t('errors.tryAgain')}</Button>
                     <Button variant="outline" asChild>
-                        <Link to="/">{t('errors.backHome')}</Link>
+                        <a href="/">{t('errors.backHome')}</a>
                     </Button>
                 </div>
             </div>
@@ -49,9 +48,8 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     }
 
     componentDidCatch(error: Error, info: ErrorInfo) {
-        console.error('Unhandled application error', error, info);
-
         if (import.meta.env.DEV) {
+            console.error('Unhandled application error', error, info);
             // Only log the component stack in development; never surface it to users.
             console.error(info.componentStack);
         }

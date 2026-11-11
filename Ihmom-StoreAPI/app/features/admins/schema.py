@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from app.constants.admins import (
@@ -10,11 +11,6 @@ from app.constants.admins import (
     ADMIN_USERNAME_MIN_LENGTH,
 )
 from app.shared.schema import FilterBase, QueryBase
-
-from typing import Annotated
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
-from enum import Enum
-
 
 def _validate_password(value: str) -> str:
     if not value.strip():

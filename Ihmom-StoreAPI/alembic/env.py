@@ -9,6 +9,7 @@ from app.db.base import Base
 # Import all models to register their tables in Base.metadata.
 from app.db import rate_limit as rate_limit_model
 from app.features.admins import model as admins_model
+from app.features.auth import model as auth_model
 from app.features.brands import model as brands_model
 from app.features.categories import model as categories_model
 from app.features.customers import model as customers_model
@@ -20,6 +21,7 @@ from app.features.sliders import model as sliders_model
 _REGISTERED_MODELS = (
     rate_limit_model,
     admins_model,
+    auth_model,
     brands_model,
     categories_model,
     customers_model,

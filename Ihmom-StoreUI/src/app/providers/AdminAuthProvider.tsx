@@ -50,7 +50,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const handleSessionExpired = () => {
             setAccessToken(null);
-            queryClient.setQueryData([CURRENT_ADMIN], null);
+            queryClient.clear();
             setState({ status: 'unauthenticated', admin: null });
         };
 
@@ -74,10 +74,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     );
 
     const logout = useCallback(async () => {
-        await logoutAdmin();
-
-        queryClient.clear();
-        setState({ status: 'unauthenticated', admin: null });
+        try {
+            await logoutAdmin();
+        } finally {
+            queryClient.clear();
+            setState({ status: 'unauthenticated', admin: null });
+        }
     }, [queryClient]);
 
     const value = useMemo<AdminAuthContextValue>(

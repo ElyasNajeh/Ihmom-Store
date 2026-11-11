@@ -12,7 +12,7 @@ import { Switch } from '@/shared/components/ui/switch.tsx';
 import { AdminDialog } from '@/shared/components/admin/admin-dialog.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import type { CreateProductVariant } from '@/features/catalog/types/product.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 import { orderBilingualFields } from '@/shared/utils/localized.ts';
 import type { UseFormSetError } from 'react-hook-form';
 
@@ -140,7 +140,13 @@ export function ProductVariantDialog({
                 price: Number(parsed.data.price),
                 is_active: parsed.data.is_active,
             });
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                name_ar: t('validation.invalidField'),
+                name_en: t('validation.invalidField'),
+                price: t('validation.amount'),
+                sku: t('validation.invalidField'),
+            });
             // The parent mutation reports server errors through a toast.
         }
     });

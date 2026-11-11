@@ -82,7 +82,12 @@ def _list_categories(
     )
 
 
-def create_category(db: Session, category_data: CategoryCreate):
+def create_category(
+    db: Session,
+    category_data: CategoryCreate,
+    *,
+    commit: bool = True,
+):
     data = category_data.model_dump()
     ensure_unique_names(
         db,
@@ -94,7 +99,7 @@ def create_category(db: Session, category_data: CategoryCreate):
 
     category = Category(**data)
     try:
-        return crud.create(db, category)
+        return crud.create(db, category, commit=commit)
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(

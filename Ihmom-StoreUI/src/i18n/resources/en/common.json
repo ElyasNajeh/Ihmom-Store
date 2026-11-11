@@ -1,4 +1,18 @@
 {
+    "loading": "Loading…",
+    "apiErrors": {
+        "network": "Unable to connect. Check your connection and try again.",
+        "400": "The request could not be processed. Check your information.",
+        "401": "Your session has expired. Please sign in again.",
+        "403": "You do not have permission to perform this action.",
+        "404": "The requested item is no longer available.",
+        "409": "This request conflicts with existing data. Refresh and check your information before retrying.",
+        "413": "The server could not accept this upload. Please try a smaller image.",
+        "422": "Please check the form fields and try again.",
+        "429": "Too many attempts. Please wait before trying again.",
+        "server": "The service is temporarily unavailable. Please try again later.",
+        "unexpected": "Something went wrong. Please try again."
+    },
     "temporarilyUnavailable": "Temporarily unavailable",
     "language": {
         "label": "Language",

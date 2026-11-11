@@ -26,8 +26,18 @@ export async function fetchAdminOrder(orderId: number): Promise<Order> {
     return response.data;
 }
 
-export async function checkoutOrder(checkoutData: Checkout): Promise<CheckoutOrder> {
-    const response = await api.post<CheckoutOrder>('/orders/checkout', checkoutData);
+export interface CheckoutAttempt {
+    checkoutData: Checkout;
+    idempotencyKey: string;
+}
+
+export async function checkoutOrder({
+    checkoutData,
+    idempotencyKey,
+}: CheckoutAttempt): Promise<CheckoutOrder> {
+    const response = await api.post<CheckoutOrder>('/orders/checkout', checkoutData, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+    });
 
     return response.data;
 }

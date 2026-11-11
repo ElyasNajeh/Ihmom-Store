@@ -14,7 +14,7 @@ export function AboutHero() {
     const storeName = getStoreName(isArabic);
 
     return (
-        <section id="about" className="scroll-mt-20 sm:scroll-mt-24">
+        <section id="about" className="scroll-mt-20 overflow-x-clip sm:scroll-mt-24">
             <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 lg:px-8 lg:py-24">
                 <div className="relative z-10">
                     <div className="border-border bg-card text-muted-foreground mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">

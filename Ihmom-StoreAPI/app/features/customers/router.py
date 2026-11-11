@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import (
@@ -31,7 +30,7 @@ router = APIRouter(prefix="/customers", tags=["Customers"])
 def validate_customer_query(
     request: Request,
     page: int = Query(1, ge=1, le=1000),
-    page_size: int = Query(12, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None, min_length=1, max_length=150),
     sort_by: CustomerSortBy | None = Query(None),
     order: SortDirection | None = Query(None),

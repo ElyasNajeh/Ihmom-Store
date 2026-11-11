@@ -23,10 +23,13 @@ export default defineConfig(({ mode }) => {
         server: {
             proxy: {
                 '/api': {
-                    target:
-                        env.VITE_NODE_ENV === 'development'
-                            ? env.VITE_DEVELOPMENT_API_PROXY_TARGET
-                            : env.VITE_DEPLOYMENT_API_PROXY_TARGET,
+                    target: env.VITE_DEVELOPMENT_API_PROXY_TARGET || 'http://localhost:8000',
+                    changeOrigin: true,
+                    cookiePathRewrite: { '/auth': '/api/auth' },
+                    rewrite: (requestPath) => requestPath.replace(/^\/api(?=\/|$)/, ''),
+                },
+                '/uploads': {
+                    target: env.VITE_DEVELOPMENT_API_PROXY_TARGET || 'http://localhost:8000',
                     changeOrigin: true,
                 },
             },

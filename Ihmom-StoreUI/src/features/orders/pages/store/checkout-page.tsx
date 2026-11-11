@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useBlocker, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
@@ -53,7 +53,7 @@ import { formatOrderMoney } from '@/features/orders/utils/order-format.ts';
 import { localizedText } from '@/shared/utils/localized.ts';
 import { getApiErrorMessage } from '@/shared/utils/api-error.ts';
 import { downloadBlob } from '@/shared/utils/download.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 import { cn } from '@/shared/lib/utils.ts';
 
 interface CheckoutFormValues {
@@ -78,6 +78,10 @@ export default function CheckoutPage() {
     const [placedOrder, setPlacedOrder] = useState<CheckoutOrder | null>(null);
     const [step, setStep] = useState<1 | 2>(1);
     const [invoiceDownloaded, setInvoiceDownloaded] = useState(false);
+    const checkoutAttemptRef = useRef<{
+        key: string;
+        fingerprint: string;
+    } | null>(null);
 
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
@@ -152,6 +156,8 @@ export default function CheckoutPage() {
             return;
         }
 
+        clearErrors();
+
         const parsed = parseCheckout(values);
 
         if (!parsed.success) {
@@ -176,13 +182,36 @@ export default function CheckoutPage() {
             return;
         }
 
-        checkoutMutation.mutate(parsed.data, {
-            onSuccess: (order) => {
-                setPlacedOrder(order);
-                clearCart();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+        const fingerprint = JSON.stringify(parsed.data);
+        if (checkoutAttemptRef.current?.fingerprint !== fingerprint) {
+            checkoutAttemptRef.current = {
+                key: crypto.randomUUID(),
+                fingerprint,
+            };
+        }
+
+        checkoutMutation.mutate(
+            {
+                checkoutData: parsed.data,
+                idempotencyKey: checkoutAttemptRef.current.key,
             },
-        });
+            {
+                onError: (error) => {
+                    applyApiErrors(error, setError, {
+                        customer_name: t('checkout.nameRequired'),
+                        customer_phone: t('checkout.phoneInvalid'),
+                        delivery_area_id: t('checkout.areaRequired'),
+                        address: t('checkout.addressRequired'),
+                    });
+                },
+                onSuccess: (order) => {
+                    checkoutAttemptRef.current = null;
+                    setPlacedOrder(order);
+                    clearCart();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+            },
+        );
     });
 
     const downloadInvoice = async (): Promise<boolean> => {

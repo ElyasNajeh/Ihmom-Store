@@ -1,0 +1,35 @@
+name: ihmom-store-tests
+
+services:
+  redis-test:
+    image: redis:8.2-alpine
+    container_name: ihmom-store-redis-test
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:57279:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+
+  postgres-test:
+    image: postgres:17
+    container_name: ihmom-store-postgres-test
+    environment:
+      POSTGRES_USER: ihmom_test
+      POSTGRES_PASSWORD: ihmom_test_only_password
+      POSTGRES_DB: ihmom_store_test
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ihmom_test -d ihmom_store_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: "no"

@@ -19,9 +19,13 @@ const adminDetailsSchema = z.object({
         .max(ADMIN_USERNAME_MAX_LENGTH, {
             error: `Username must be at most ${ADMIN_USERNAME_MAX_LENGTH} characters`,
         }),
-    email: z.email({ error: 'Invalid email address' }).max(ADMIN_EMAIL_MAX_LENGTH, {
-        error: `Email must be at most ${ADMIN_EMAIL_MAX_LENGTH} characters`,
-    }),
+    email: z
+        .string()
+        .trim()
+        .max(ADMIN_EMAIL_MAX_LENGTH, {
+            error: `Email must be at most ${ADMIN_EMAIL_MAX_LENGTH} characters`,
+        })
+        .pipe(z.email({ error: 'Invalid email address' })),
 });
 
 export const createAdminSchema = adminDetailsSchema

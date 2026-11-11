@@ -67,6 +67,7 @@ def _seed_categories(db: Session):
         lambda session, item: category_service.create_category(
             session,
             CategoryCreate(**item),
+            commit=False,
         ),
     )
 
@@ -79,6 +80,7 @@ def _seed_brands(db: Session):
         lambda session, item: brand_service.create_brand(
             session,
             BrandCreate(**item),
+            commit=False,
         ),
     )
 
@@ -91,6 +93,7 @@ def _seed_delivery_areas(db: Session):
         lambda session, item: delivery_area_service.create_delivery_area(
             session,
             DeliveryAreaCreate(**item),
+            commit=False,
         ),
     )
 
@@ -145,6 +148,7 @@ def _seed_products(
         product_service.create_product(
             db,
             _product_data(item, category_id, brand_id),
+            commit=False,
         )
         created += 1
 
@@ -152,17 +156,21 @@ def _seed_products(
 
 
 def seed_static_data(db: Session) -> dict[str, dict[str, int]]:
-    category_ids, category_counts = _seed_categories(db)
-    brand_ids, brand_counts = _seed_brands(db)
-    _, area_counts = _seed_delivery_areas(db)
-    product_counts = _seed_products(db, category_ids, brand_ids)
-
-    return {
-        "categories": category_counts,
-        "brands": brand_counts,
-        "delivery areas": area_counts,
-        "products": product_counts,
-    }
+    try:
+        category_ids, category_counts = _seed_categories(db)
+        brand_ids, brand_counts = _seed_brands(db)
+        _, area_counts = _seed_delivery_areas(db)
+        product_counts = _seed_products(db, category_ids, brand_ids)
+        db.commit()
+        return {
+            "categories": category_counts,
+            "brands": brand_counts,
+            "delivery areas": area_counts,
+            "products": product_counts,
+        }
+    except Exception:
+        db.rollback()
+        raise
 
 
 def _print_summary(summary: dict[str, dict[str, int]]) -> None:

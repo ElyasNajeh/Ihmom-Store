@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 type SpinnerProps = {
     size?: number;
     color?: string;
@@ -5,10 +7,11 @@ type SpinnerProps = {
 };
 
 export function Spinner({ size = 50, color = '#f03355', className }: SpinnerProps) {
+    const { t } = useTranslation('common');
     return (
         <div
             role="status"
-            aria-label="Loading"
+            aria-label={t('loading')}
             className={`grid shrink-0 animate-[spin_1s_steps(12)_infinite] [mask:conic-gradient(from_15deg,#0000,#000)] ${className ?? ''}`}
             style={{
                 width: size,
@@ -37,7 +40,7 @@ export function Spinner({ size = 50, color = '#f03355', className }: SpinnerProp
                     `,
                 }}
             />
-            <span className="sr-only">Loading...</span>
+            <span className="sr-only">{t('loading')}</span>
         </div>
     );
 }

@@ -11,7 +11,7 @@ import { Spinner } from '@/shared/components/ui/spinner.tsx';
 import { AdminDialog } from '@/shared/components/admin/admin-dialog.tsx';
 import type { CreateAdmin } from '@/features/admins/types/admin.ts';
 import { createAdminSchema } from '@/features/admins/schemas/admins.ts';
-import { applyZodErrors } from '@/shared/utils/form-errors.ts';
+import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 
 interface AdminFormDialogProps {
     open: boolean;
@@ -71,7 +71,12 @@ export function AdminFormDialog({
         try {
             await onSubmit(parsed.data);
             setShowPassword(false);
-        } catch {
+        } catch (error) {
+            applyApiErrors(error, setError, {
+                username: t('validation.invalidField'),
+                email: t('validation.email'),
+                password: t('validation.invalidField'),
+            });
             // The parent mutation surfaces server errors through a toast.
         }
     });

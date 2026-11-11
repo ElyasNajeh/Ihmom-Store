@@ -1,0 +1,137 @@
+name: ihmom-store-proxy-tests
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: proxy_test
+      POSTGRES_PASSWORD: disposable_proxy_test_only
+      POSTGRES_DB: ihmom_proxy_test
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U proxy_test -d ihmom_proxy_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:8.2-alpine
+    command: [redis-server, --save, "", --appendonly, "no"]
+    tmpfs: [/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.prod
+    image: ihmom-store-proxy-tests-api
+    environment:
+      APP_NAME: Ihmom disposable proxy test
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: proxy_test
+      DATABASE_PASSWORD: disposable_proxy_test_only
+      DATABASE_NAME: ihmom_proxy_test
+      SECRET_KEY: disposable-proxy-test-secret-never-use-in-production
+      REDIS_URL: redis://redis:6379/15
+      RATE_LIMIT_KEY_PREFIX: ihmom:proxy-test
+      LOGIN_RATE_WINDOW_SECONDS: 900
+      LOGIN_RATE_LIMIT_PER_ACCOUNT: 5
+      LOGIN_RATE_LIMIT_PER_IP: 20
+      COOKIE_SECURE: "true"
+      COOKIE_SAMESITE: strict
+      UPLOAD_ROOT: /tmp/proxy-test-uploads
+      CORS_ORIGINS: https://ihmom-store.com
+    volumes:
+      - ./probe.py:/app/probe.py:ro
+    command:
+      - sh
+      - -c
+      - >-
+        python -m alembic upgrade head &&
+        exec python -m uvicorn probe:app --host 0.0.0.0 --port 8000
+        --proxy-headers --forwarded-allow-ips 172.30.253.3,172.30.253.7
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    networks:
+      default:
+      proxy:
+        ipv4_address: 172.30.253.2
+
+  ui:
+    build:
+      context: ../../../Ihmom-StoreUI
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: /api
+    image: ihmom-store-proxy-tests-ui
+    environment:
+      TRUSTED_EDGE_PROXY_IP: 172.30.253.4
+      NGINX_ENVSUBST_FILTER: ^TRUSTED_EDGE_PROXY_IP$$
+    depends_on:
+      api: {condition: service_healthy}
+    networks:
+      proxy:
+        ipv4_address: 172.30.253.3
+
+  edge:
+    image: nginx:alpine
+    volumes:
+      - ./edge.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../../../deploy/nginx/ihmom-forwarded-headers.conf:/etc/nginx/ihmom-forwarded-headers.conf:ro
+    depends_on: [ui]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/api/health]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks:
+      proxy:
+        ipv4_address: 172.30.253.4
+
+  # Exercise the actual host-loopback -> bridge-gateway path as well as the
+  # containerized edge above. There is no production port or volume overlap.
+  ui-host:
+    image: ihmom-store-proxy-tests-ui
+    environment:
+      TRUSTED_EDGE_PROXY_IP: 172.30.253.1
+      NGINX_ENVSUBST_FILTER: ^TRUSTED_EDGE_PROXY_IP$$
+    ports: ["127.0.0.1:58374:80"]
+    depends_on:
+      api: {condition: service_healthy}
+    networks:
+      proxy:
+        ipv4_address: 172.30.253.7
+
+  client-a:
+    image: ihmom-store-proxy-tests-api
+    command: [python, -c, "import time; time.sleep(3600)"]
+    depends_on: [edge]
+    networks:
+      proxy:
+        ipv4_address: 172.30.253.5
+
+  client-b:
+    image: ihmom-store-proxy-tests-api
+    command: [python, -c, "import time; time.sleep(3600)"]
+    depends_on: [edge]
+    networks:
+      proxy:
+        ipv4_address: 172.30.253.6
+
+networks:
+  proxy:
+    ipam:
+      config:
+        - subnet: 172.30.253.0/28
+          gateway: 172.30.253.1

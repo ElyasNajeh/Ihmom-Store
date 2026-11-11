@@ -82,15 +82,18 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Both Compose files remain standalone in the repository root. Production keeps
 the `ihmom-store` project name, existing service/container names, environment
-variables, ports, default network, and named volumes. The production file
+variables, default network, and named volumes. Published application ports match
+the VPS: UI `127.0.0.1:5174`, API `127.0.0.1:8001` (5173 belongs to ETA).
+The production file
 intentionally differs from development: no source bind mounts or reload,
 PostgreSQL is internal, published application/admin ports bind to loopback,
 and the frontend is served by Nginx.
 
 A shared Compose base was not introduced: it would add a deployment dependency
 to the established single-file invocation without materially simplifying these
-two small configurations. No deployment command or VPS configuration change
-is required by this cleanup.
+two small configurations. See [production proxy deployment](deploy/PROXY_DEPLOYMENT.md)
+for the required Ihmom-only host Nginx header update and new dedicated proxy
+network. This preserves the established deployment command.
 
 Preserve the real root `.env`. Production supplies `VITE_API_URL` at frontend
 build time; configure trusted origins and secure cookies for the deployed HTTPS

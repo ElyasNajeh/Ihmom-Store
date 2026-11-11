@@ -32,6 +32,20 @@ python -m pytest tests/integration/test_checkout_orders.py::test_same_idempotenc
 python -m pytest --cov=app --cov-branch --cov-report=term-missing
 ```
 
+`tests/proxy` additionally builds the production API/UI images and exercises
+two real Nginx proxies, Uvicorn's trust allowlist, header spoofing, Docker's
+host-loopback gateway, and per-IP/per-account Redis login limits. It owns and
+automatically removes a separate disposable Docker project. Run it with:
+
+```powershell
+python -m pytest tests/unit/test_proxy_headers.py tests/proxy -v
+```
+
+Docker access is required for this module; use `-m "not proxy"` when deliberately
+running only in-process tests. See [proxy deployment and regression instructions](../../deploy/PROXY_DEPLOYMENT.md)
+for network/port requirements and safe recovery after an interrupted test run.
+Current proxy verification results are in [PROXY_RATE_LIMIT_REPORT.md](PROXY_RATE_LIMIT_REPORT.md).
+
 Stop only the disposable environment; do not add `-v`:
 
 ```powershell

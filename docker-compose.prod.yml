@@ -73,7 +73,12 @@ services:
       - .env
 
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8000"
+
+    networks:
+      default:
+      proxy:
+        ipv4_address: ${IHMOM_PROXY_API_IP:-172.30.254.2}
 
     volumes:
       - uploads_data:/app/uploads
@@ -90,7 +95,7 @@ services:
       - -c
       - |
         python -m alembic upgrade head &&
-        exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+        exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips ${IHMOM_PROXY_UI_IP:-172.30.254.3}
 
   # =========================
   # React Production Build
@@ -106,7 +111,17 @@ services:
     restart: unless-stopped
 
     ports:
-      - "127.0.0.1:5173:80"
+      - "127.0.0.1:5174:80"
+
+    environment:
+      TRUSTED_EDGE_PROXY_IP: ${IHMOM_PROXY_GATEWAY:-172.30.254.1}
+      NGINX_ENVSUBST_FILTER: ^TRUSTED_EDGE_PROXY_IP$$
+
+    # Only the API and UI join this dedicated proxy network. The host's
+    # loopback-published connection reaches UI through its gateway.
+    networks:
+      proxy:
+        ipv4_address: ${IHMOM_PROXY_UI_IP:-172.30.254.3}
 
     depends_on:
       - api
@@ -117,3 +132,12 @@ services:
 volumes:
   postgres_data:
   uploads_data:
+
+# Keep the existing default network for PostgreSQL/Redis/adminer/API. Fixed
+# proxy addresses make the trust boundary survive container recreation.
+networks:
+  proxy:
+    ipam:
+      config:
+        - subnet: ${IHMOM_PROXY_SUBNET:-172.30.254.0/29}
+          gateway: ${IHMOM_PROXY_GATEWAY:-172.30.254.1}

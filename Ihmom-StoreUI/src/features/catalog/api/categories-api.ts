@@ -1,6 +1,5 @@
 import type {
     Category,
-    CategoryImage,
     CreateCategory,
     QueryCategory,
     UpdateCategory,
@@ -43,38 +42,16 @@ export async function deleteCategory(categoryId: number): Promise<void> {
     await api.delete(`/categories/${categoryId}`);
 }
 
-export async function fetchCategoryImages(categoryId: number): Promise<CategoryImage[]> {
-    const response = await api.get<CategoryImage[]>(`/categories/${categoryId}/images`);
-
-    return response.data;
+export async function fetchAdminCategory(categoryId: number): Promise<Category> {
+    return (await api.get<Category>(`/categories/admin/${categoryId}`)).data;
 }
 
-export async function uploadCategoryImages(
-    categoryId: number,
-    files: File[],
-): Promise<CategoryImage[]> {
-    const formData = new FormData();
-
-    files.forEach((file) => {
-        formData.append('files', file);
-    });
-
-    const response = await api.post<CategoryImage[]>(`/categories/${categoryId}/images`, formData);
-
-    return response.data;
+export async function replaceCategoryImage(categoryId: number, image: File): Promise<Category> {
+    const body = new FormData();
+    body.append('image', image);
+    return (await api.put<Category>(`/categories/${categoryId}/image`, body)).data;
 }
 
-export async function setPrimaryCategoryImage(
-    categoryId: number,
-    imageId: number,
-): Promise<CategoryImage> {
-    const response = await api.patch<CategoryImage>(
-        `/categories/${categoryId}/images/${imageId}/set-primary`,
-    );
-
-    return response.data;
-}
-
-export async function deleteCategoryImage(categoryId: number, imageId: number): Promise<void> {
-    await api.delete(`/categories/${categoryId}/images/${imageId}`);
+export async function deleteCategoryImage(categoryId: number): Promise<Category> {
+    return (await api.delete<Category>(`/categories/${categoryId}/image`)).data;
 }

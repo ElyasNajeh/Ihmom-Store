@@ -81,9 +81,7 @@ export function CategoryShowcase({ categories, isLoading, isError }: CategorySho
                     keyExtractor={(category) => category.id}
                     renderItem={(category, index) => {
                         const categoryName = localizedName(category, isArabic);
-                        const image =
-                            category.images.find((picture) => picture.is_primary) ??
-                            category.images[0];
+                        const image = category.image;
 
                         return (
                             <Link
@@ -97,7 +95,7 @@ export function CategoryShowcase({ categories, isLoading, isError }: CategorySho
                                     <div className="bg-secondary relative aspect-[16/10] overflow-hidden">
                                         {image ? (
                                             <ImageWithFade
-                                                src={apiAssetUrl(image.image) ?? image.image}
+                                                src={apiAssetUrl(image) ?? image}
                                                 alt=""
                                                 loading="lazy"
                                                 className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transform-none"

@@ -1,5 +1,49 @@
 import { expect, test } from '@playwright/test';
 
+test('category has one WebP image through upload, replacement and removal', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('store-language', 'en'));
+    await page.goto('/admin/login');
+    await page.locator('input[name="username"]').fill('browser-admin');
+    await page.locator('input[name="password"]').fill('Browser-password-123!');
+    await page.locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await page.goto('/admin/categories');
+    await page.getByRole('button', { name: 'New category', exact: true }).click();
+    const form = page.getByRole('dialog', { name: 'Create category', exact: true });
+    const name = `Image category ${Date.now()}`;
+    await form.getByLabel('Arabic name', { exact: true }).fill(name);
+    await form.getByLabel('English name', { exact: true }).fill(name);
+    await form.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(form).not.toBeVisible();
+    await page.getByRole('button', { name: `Manage image: ${name}`, exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Category image', exact: true });
+    let previous: string | null = null;
+    for (let index = 0; index < 2; index++) {
+        await dialog.locator('input[type="file"]').setInputFiles('public/favicon.png');
+        const saved = page.waitForResponse(
+            (r) => r.url().endsWith('/image') && r.request().method() === 'PUT',
+        );
+        await dialog.getByRole('button', { name: 'Save image', exact: true }).click();
+        const response = await saved;
+        expect(response.status()).toBe(200);
+        const category = await response.json();
+        expect(category).not.toHaveProperty('images');
+        expect(category.image).toMatch(/\.webp$/);
+        await expect(
+            dialog.getByRole('img', { name: 'Category image', exact: true }),
+        ).toHaveAttribute('src', new RegExp(category.image));
+        const served = await page.request.get(category.image);
+        expect(served.headers()['content-type']).toBe('image/webp');
+        if (previous) expect((await page.request.get(previous)).status()).toBe(404);
+        previous = category.image;
+    }
+    await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+    const confirm = page.getByRole('alertdialog', { name: 'Delete image?', exact: true });
+    await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(confirm).not.toBeVisible();
+    await expect(dialog.getByText('No image yet', { exact: true })).toBeVisible();
+});
+
 const publicRoutes = [
     '/',
     '/shop',
@@ -23,7 +67,10 @@ test('admin category and brand forms validate, save and refresh their lists', as
     await page.locator('input[name="password"]').fill('Browser-password-123!');
     await page.locator('button[type="submit"]').click();
     await expect(page).toHaveURL(/\/admin$/);
-    for (const [resource, label] of [['categories', 'category'], ['brands', 'brand']]) {
+    for (const [resource, label] of [
+        ['categories', 'category'],
+        ['brands', 'brand'],
+    ]) {
         const suffix = Date.now().toString();
         const name = `Browser ${label} ${suffix}`;
         await page.goto(`/admin/${resource}`);
@@ -33,7 +80,9 @@ test('admin category and brand forms validate, save and refresh their lists', as
         await expect(dialog.getByRole('alert').first()).toBeVisible();
         await dialog.getByLabel('Arabic name', { exact: true }).fill(`اختبار ${suffix}`);
         await dialog.getByLabel('English name', { exact: true }).fill(name);
-        const saved = page.waitForResponse((r) => r.url().endsWith(`/${resource}/`) && r.request().method() === 'POST');
+        const saved = page.waitForResponse(
+            (r) => r.url().endsWith(`/${resource}/`) && r.request().method() === 'POST',
+        );
         await dialog.getByRole('button', { name: 'Create', exact: true }).click();
         expect((await saved).status()).toBe(201);
         await expect(dialog).not.toBeVisible();
@@ -44,7 +93,9 @@ test('admin category and brand forms validate, save and refresh their lists', as
 test('changing a shop category preserves the entered search', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('store-language', 'en'));
     await page.goto('/shop');
-    const search = page.locator('main input[type="search"], main input[placeholder*="Search products"]').first();
+    const search = page
+        .locator('main input[type="search"], main input[placeholder*="Search products"]')
+        .first();
     await search.fill('Browser');
     await page.getByRole('button', { name: 'Browse Browser Category', exact: true }).click();
     await expect(search).toHaveValue('Browser');
@@ -224,6 +275,7 @@ test('admin pages remain usable across mobile/tablet/desktop and both directions
             ]) {
                 await page.goto(`/admin/${route}`);
                 await expect(page.locator('h1').first()).toBeVisible();
+                await expect(page).toHaveURL(new RegExp(`/admin/${route}$`));
                 await expect(page.locator('html')).toHaveAttribute(
                     'dir',
                     language === 'ar' ? 'rtl' : 'ltr',

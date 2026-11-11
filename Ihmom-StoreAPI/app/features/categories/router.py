@@ -1,4 +1,3 @@
-
 from typing import Annotated
 
 from fastapi import (
@@ -19,7 +18,6 @@ from app.features.admins.model import Admin
 from app.features.categories import service
 from app.features.categories.schema import (
     CategoryCreate,
-    CategoryImageResponse,
     CategoryListResponse,
     CategoryQuery,
     CategoryResponse,
@@ -135,53 +133,20 @@ def delete_category(
     service.delete_category(db, category_id)
 
 
-@router.get(
-    "/{category_id}/images",
-    response_model=list[CategoryImageResponse],
-)
-def list_category_images(
+@router.put("/{category_id}/image", response_model=CategoryResponse)
+def replace_category_image(
     category_id: Annotated[int, Path(ge=1)],
+    image: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin),
 ):
-    return service.list_category_images(db, category_id)
+    return service.replace_category_image(db, category_id, image)
 
 
-@router.post(
-    "/{category_id}/images",
-    response_model=list[CategoryImageResponse],
-    status_code=status.HTTP_201_CREATED,
-)
-def upload_category_images(
-    category_id: Annotated[int, Path(ge=1)],
-    files: list[UploadFile] = File(...),
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
-):
-    return service.upload_category_images(db, category_id, files)
-
-
-@router.patch(
-    "/{category_id}/images/{image_id}/set-primary",
-    response_model=CategoryImageResponse,
-)
-def set_primary_category_image(
-    category_id: Annotated[int, Path(ge=1)],
-    image_id: Annotated[int, Path(ge=1)],
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin),
-):
-    return service.set_primary_category_image(db, category_id, image_id)
-
-
-@router.delete(
-    "/{category_id}/images/{image_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
+@router.delete("/{category_id}/image", response_model=CategoryResponse)
 def delete_category_image(
     category_id: Annotated[int, Path(ge=1)],
-    image_id: Annotated[int, Path(ge=1)],
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin),
-) -> None:
-    service.delete_category_image(db, category_id, image_id)
+):
+    return service.replace_category_image(db, category_id, None)

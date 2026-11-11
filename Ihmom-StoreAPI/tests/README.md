@@ -41,5 +41,17 @@ docker compose -f tests/docker-compose.test.yml down
 Checkout idempotency keys are retained for the lifetime of their order. A
 retry with the same normalized payload returns that order, while a different
 payload receives `409 Conflict`. Redis is required at startup and rate-limit
-checks fail closed with `503` if it becomes unavailable. See `TEST_REPORT.md`
-for the latest verified results and limitations.
+checks fail closed with `503` if it becomes unavailable. See the repository's
+`CLEANUP_REPORT.md` for the current verification results and limitations.
+
+Seed-specific tests have been retired with the removed seed utilities. Dashboard,
+order-number, monetary and date-bucket tests remain in `test_dashboard.py` and
+`test_order_dashboard.py` in their original integration/unit directories.
+
+Category coverage now verifies the single `image` field, WebP replacement,
+deletion, authentication and rollback cleanup. Migration tests create legacy
+image records before upgrading, verify deterministic selection and preservation
+of every archived association, downgrade, re-upgrade and check schema drift.
+Guest history limits are tested against Redis, including concurrent attempts,
+expiration, phone/IP/global limits and fail-closed outages. See
+`REFACTORING_REPORT.md` for the current execution results.

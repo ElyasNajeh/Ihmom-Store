@@ -10,7 +10,7 @@ import { AdminListToolbar } from '@/shared/components/admin/admin-list-toolbar.t
 import { AdminRowActions } from '@/shared/components/admin/admin-row-actions.tsx';
 import { BilingualNameCell } from '@/shared/components/admin/bilingual-name-cell.tsx';
 import { ConfirmDialog } from '@/shared/components/admin/confirm-dialog.tsx';
-import { CategoryImagesDialog } from '@/features/catalog/components/admin/category-images-dialog.tsx';
+import { CategoryImageDialog } from '@/features/catalog/components/admin/category-image-dialog.tsx';
 import {
     TaxonomyFormDialog,
     type TaxonomyFormValues,
@@ -129,14 +129,13 @@ export default function AdminCategoriesPage() {
                 header: t('fields.image'),
                 className: 'w-16',
                 cell: (category) => {
-                    const image =
-                        category.images.find((picture) => picture.is_primary) ?? category.images[0];
+                    const image = category.image;
 
                     return (
                         <div className="bg-muted size-11 overflow-hidden rounded-md">
                             {image ? (
                                 <img
-                                    src={apiAssetUrl(image.image) ?? undefined}
+                                    src={apiAssetUrl(image) ?? undefined}
                                     alt=""
                                     loading="lazy"
                                     className="size-full object-cover"
@@ -289,7 +288,7 @@ export default function AdminCategoriesPage() {
                 isPending={deleteMutation.isPending}
             />
 
-            <CategoryImagesDialog
+            <CategoryImageDialog
                 category={imagesFor}
                 open={Boolean(imagesFor)}
                 onOpenChange={(open) => {

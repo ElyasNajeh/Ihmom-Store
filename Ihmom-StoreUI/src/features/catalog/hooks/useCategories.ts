@@ -6,18 +6,13 @@ import {
     deleteCategoryImage,
     fetchAdminCategories,
     fetchCategories,
-    fetchCategoryImages,
-    setPrimaryCategoryImage,
+    fetchAdminCategory,
     updateCategory,
-    uploadCategoryImages,
+    replaceCategoryImage,
 } from '@/features/catalog/api/categories-api.ts';
-import type {
-    CategoryImage,
-    QueryCategory,
-    UpdateCategory,
-} from '@/features/catalog/types/category.ts';
+import type { QueryCategory, UpdateCategory } from '@/features/catalog/types/category.ts';
 import { withDefaultQuery } from '@/shared/types/query.ts';
-import { CATEGORIES, CATEGORY_IMAGES } from '@/shared/utils/query-keys.ts';
+import { CATEGORIES, CATEGORY } from '@/shared/utils/query-keys.ts';
 import { invalidateCatalogTaxonomy } from '@/shared/utils/query-invalidation.ts';
 
 export function useCategories(params: QueryCategory = {}) {
@@ -79,50 +74,27 @@ export function useDeleteCategory() {
         mutationFn: deleteCategory,
 
         onSuccess: (_, categoryId) => {
-            queryClient.removeQueries({ queryKey: [CATEGORY_IMAGES, categoryId] });
+            queryClient.removeQueries({ queryKey: [CATEGORY, categoryId] });
             invalidateCatalogTaxonomy(queryClient, CATEGORIES);
         },
     });
 }
 
-export function useCategoryImages(categoryId: number, enabled = true) {
+export function useAdminCategory(categoryId: number, enabled = true) {
     return useQuery({
-        queryKey: [CATEGORY_IMAGES, categoryId],
+        queryKey: [CATEGORY, categoryId],
         enabled,
-        queryFn: () => fetchCategoryImages(categoryId),
+        queryFn: () => fetchAdminCategory(categoryId),
     });
 }
 
-export function useUploadCategoryImages() {
+export function useReplaceCategoryImage() {
     const queryClient = useQueryClient();
-
     return useMutation({
-        mutationFn: ({ categoryId, files }: { categoryId: number; files: File[] }) =>
-            uploadCategoryImages(categoryId, files),
-
-        onSuccess: (images, { categoryId }) => {
-            queryClient.setQueryData<CategoryImage[]>([CATEGORY_IMAGES, categoryId], (current) => {
-                if (!current) return images;
-
-                const existingIds = new Set(current.map((image) => image.id));
-
-                return [...current, ...images.filter((image) => !existingIds.has(image.id))];
-            });
-
-            invalidateCatalogTaxonomy(queryClient, CATEGORIES);
-        },
-    });
-}
-
-export function useSetPrimaryCategoryImage() {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: ({ categoryId, imageId }: { categoryId: number; imageId: number }) =>
-            setPrimaryCategoryImage(categoryId, imageId),
-
-        onSuccess: (_, { categoryId }) => {
-            void queryClient.invalidateQueries({ queryKey: [CATEGORY_IMAGES, categoryId] });
+        mutationFn: ({ categoryId, image }: { categoryId: number; image: File }) =>
+            replaceCategoryImage(categoryId, image),
+        onSuccess: (category) => {
+            queryClient.setQueryData([CATEGORY, category.id], category);
             invalidateCatalogTaxonomy(queryClient, CATEGORIES);
         },
     });
@@ -130,13 +102,10 @@ export function useSetPrimaryCategoryImage() {
 
 export function useDeleteCategoryImage() {
     const queryClient = useQueryClient();
-
     return useMutation({
-        mutationFn: ({ categoryId, imageId }: { categoryId: number; imageId: number }) =>
-            deleteCategoryImage(categoryId, imageId),
-
-        onSuccess: (_, { categoryId }) => {
-            void queryClient.invalidateQueries({ queryKey: [CATEGORY_IMAGES, categoryId] });
+        mutationFn: deleteCategoryImage,
+        onSuccess: (category) => {
+            queryClient.setQueryData([CATEGORY, category.id], category);
             invalidateCatalogTaxonomy(queryClient, CATEGORIES);
         },
     });

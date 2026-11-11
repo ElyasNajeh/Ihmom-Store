@@ -33,6 +33,16 @@ htmlcov/
 node_modules/
 dist/
 dist-ssr/
+.npm-cache/
+.vite/
+.vite-temp/
+.vitest/
+.vitest-cache/
+coverage/
+*.tsbuildinfo
+test-results/
+playwright-report/
+blob-report/
 
 npm-debug.log*
 yarn-debug.log*
@@ -71,3 +81,11 @@ logs/
 # Local Files
 # =========================
 *.local
+
+# Local credentials and backups (keep the committed environment template)
+*.pem
+*.key
+*.p12
+*.pfx
+*.dump
+*.sql.gz

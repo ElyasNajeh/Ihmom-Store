@@ -1,4 +1,3 @@
-
 from datetime import date, timedelta
 from decimal import Decimal
 from typing import Annotated
@@ -19,7 +18,11 @@ from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.rate_limit import client_ip, enforce_checkout_limit
+from app.core.rate_limit import (
+    client_ip,
+    enforce_checkout_limit,
+    enforce_order_history_limit,
+)
 from app.core.security import (
     OrderHistoryClaims,
     create_order_history_token,
@@ -179,7 +182,7 @@ async def checkout(
     "/history/verify",
     response_model=OrderHistoryTokenResponse,
 )
-def verify_order_history(
+async def verify_order_history(
     history_data: OrderHistoryVerifyRequest,
     request: Request,
     response: Response,
@@ -187,15 +190,9 @@ def verify_order_history(
 ):
     response.headers["Cache-Control"] = "no-store"
 
-    service.enforce_order_history_rate_limit(
-        db,
-        client_ip=request.client.host if request.client else "unknown",
-        phone=history_data.phone,
-    )
-    order = service.verify_order_history(
-        db,
-        history_data.phone,
-        history_data.order_number,
+    await enforce_order_history_limit(client_ip(request), history_data.phone)
+    order = await run_in_threadpool(
+        service.verify_order_history, db, history_data.phone, history_data.order_number
     )
     token = create_order_history_token(
         order.customer_phone,

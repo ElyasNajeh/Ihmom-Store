@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.config import settings
 from app.core.security import OrderHistoryClaims, create_order_history_token
-from app.db import rate_limit
 from app.features.brands.model import Brand
 from app.features.categories.model import Category
 from app.features.customers.service import get_or_create_customer
@@ -38,12 +37,6 @@ from app.constants.orders import (
 )
 from app.constants.products import DEFAULT_VARIANT_NAME
 from app.constants.query import SortDirection
-from app.constants.rate_limit import (
-    ORDER_HISTORY_GLOBAL_SUBJECT,
-    ORDER_HISTORY_SCOPE_GLOBAL,
-    ORDER_HISTORY_SCOPE_IP,
-    ORDER_HISTORY_SCOPE_PHONE,
-)
 from app.shared.phone import normalize_phone, phone_identity
 from app.shared.search import like_pattern
 from app.shared.sorting import build_order_by
@@ -466,52 +459,6 @@ def get_order(db: Session, order_id: int):
 
 def get_order_items(db: Session, order_id: int):
     return get_order(db, order_id).items
-
-
-def enforce_order_history_rate_limit(
-    db: Session,
-    *,
-    client_ip: str,
-    phone: str,
-) -> None:
-    now = datetime.now(timezone.utc)
-    window_seconds = settings.ORDER_HISTORY_RATE_WINDOW_SECONDS
-    checks = (
-        (
-            ORDER_HISTORY_SCOPE_IP,
-            client_ip,
-            settings.ORDER_HISTORY_RATE_LIMIT_PER_IP,
-        ),
-        (
-            ORDER_HISTORY_SCOPE_PHONE,
-            phone_identity(phone),
-            settings.ORDER_HISTORY_RATE_LIMIT_PER_PHONE,
-        ),
-        (
-            ORDER_HISTORY_SCOPE_GLOBAL,
-            ORDER_HISTORY_GLOBAL_SUBJECT,
-            settings.ORDER_HISTORY_RATE_LIMIT_GLOBAL,
-        ),
-    )
-
-    for scope, subject, limit in checks:
-        retry_after = rate_limit.consume(
-            db,
-            scope=scope,
-            subject=subject,
-            limit=limit,
-            window_seconds=window_seconds,
-            now=now,
-        )
-        if retry_after is not None:
-            raise HTTPException(
-                status_code=429,
-                detail="Too many verification attempts. Please try again later.",
-                headers={
-                    "Retry-After": str(retry_after),
-                    "Cache-Control": "no-store",
-                },
-            )
 
 
 def verify_order_history(

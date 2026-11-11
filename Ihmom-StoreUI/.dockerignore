@@ -12,3 +12,11 @@ npm-debug.log*
 .vscode
 coverage
 *.tsbuildinfo
+.npm-cache
+test-results
+playwright-report
+blob-report
+tests
+playwright.config.ts
+vitest.config.ts
+FRONTEND_TEST_REPORT.md

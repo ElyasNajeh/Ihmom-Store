@@ -14,10 +14,9 @@ def _disk_path(url: str) -> Path:
     return TEST_UPLOAD_ROOT / url.removeprefix("/uploads/")
 
 
-@pytest.mark.parametrize("resource", ["products", "categories"])
-def test_image_collection_lifecycle(client, auth_headers, catalog, png_bytes, resource):
-    owner_id = catalog.product_id if resource == "products" else catalog.category_id
-    path = f"/{resource}/{owner_id}/images"
+def test_image_collection_lifecycle(client, auth_headers, catalog, png_bytes):
+    owner_id = catalog.product_id
+    path = f"/products/{owner_id}/images"
     response = client.post(
         path,
         headers=auth_headers,
@@ -43,7 +42,7 @@ def test_image_collection_lifecycle(client, auth_headers, catalog, png_bytes, re
     assert served.content != png_bytes
 
     promoted = client.patch(
-        f"/{resource}/{owner_id}/images/{images[1]['id']}/set-primary",
+        f"/products/{owner_id}/images/{images[1]['id']}/set-primary",
         headers=auth_headers,
     )
     assert promoted.status_code == 200
@@ -51,7 +50,7 @@ def test_image_collection_lifecycle(client, auth_headers, catalog, png_bytes, re
 
     old_file = _disk_path(images[1]["image"])
     deleted = client.delete(
-        f"/{resource}/{owner_id}/images/{images[1]['id']}", headers=auth_headers
+        f"/products/{owner_id}/images/{images[1]['id']}", headers=auth_headers
     )
     assert deleted.status_code == 204
     assert not old_file.exists()
@@ -60,12 +59,11 @@ def test_image_collection_lifecycle(client, auth_headers, catalog, png_bytes, re
     assert remaining[0]["is_primary"] is True
 
 
-@pytest.mark.parametrize("resource", ["products", "categories"])
 def test_image_upload_rejects_missing_empty_and_corrupt_files(
-    client, auth_headers, catalog, resource
+    client, auth_headers, catalog
 ):
-    owner_id = catalog.product_id if resource == "products" else catalog.category_id
-    path = f"/{resource}/{owner_id}/images"
+    owner_id = catalog.product_id
+    path = f"/products/{owner_id}/images"
     assert client.post(path, headers=auth_headers).status_code == 422
     for content in (b"", b"not an image"):
         response = client.post(

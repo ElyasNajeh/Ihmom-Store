@@ -85,9 +85,7 @@ export function ShopCategoryBar({
                       ))
                     : categories.map((category) => {
                           const name = categoryName(category, isArabic);
-                          const image =
-                              category.images.find((picture) => picture.is_primary) ??
-                              category.images[0];
+                          const image = category.image;
                           const active = categoryId === category.id;
 
                           return (
@@ -112,7 +110,7 @@ export function ShopCategoryBar({
                                   >
                                       {image ? (
                                           <img
-                                              src={apiAssetUrl(image.image) ?? image.image}
+                                              src={apiAssetUrl(image) ?? image}
                                               alt=""
                                               loading="lazy"
                                               className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transform-none"

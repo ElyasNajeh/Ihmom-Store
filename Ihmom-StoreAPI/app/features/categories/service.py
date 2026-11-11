@@ -1,9 +1,8 @@
-
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
-from app.features.categories.model import Category, CategoryImage
+from app.features.categories.model import Category
 from app.features.categories.schema import (
     CategoryCreate,
     CategoryQuery,
@@ -11,12 +10,11 @@ from app.features.categories.schema import (
     CategoryUpdate,
 )
 from app.features.products.model import Product
-from app.shared import crud, image_collection
+from app.shared import crud
 from app.constants.images import CATEGORY_IMAGE_SUBDIRECTORY
 from app.constants.query import SortDirection
 from app.shared.image_cleanup import delete_unused_uploaded_image
-from app.shared.image_collection import ImageCollection
-from app.shared.images import optimize_category_upload
+from app.shared.images import delete_uploaded_image, optimize_category_upload
 from app.shared.search import ilike_any
 from app.shared.sorting import build_order_by
 from app.shared.uniqueness import ensure_unique_names
@@ -29,15 +27,6 @@ SORTABLE_FIELDS = {
     CategorySortBy.NAME_EN: Category.name_en,
 }
 
-CATEGORY_IMAGES = ImageCollection(
-    image_model=CategoryImage,
-    owner_model=Category,
-    owner_key="category_id",
-    subdirectory=CATEGORY_IMAGE_SUBDIRECTORY,
-    label="Category",
-    save_upload=optimize_category_upload,
-)
-
 
 def _list_categories(
     db: Session,
@@ -45,7 +34,7 @@ def _list_categories(
     *,
     is_admin: bool,
 ):
-    query = db.query(Category).options(selectinload(Category.images))
+    query = db.query(Category)
 
     if not is_admin:
         query = query.filter(Category.is_active.is_(True))
@@ -58,9 +47,7 @@ def _list_categories(
         query = query.filter(search_filter)
 
     if is_admin and query_data.filter and query_data.filter.is_active is not None:
-        query = query.filter(
-            Category.is_active.is_(query_data.filter.is_active)
-        )
+        query = query.filter(Category.is_active.is_(query_data.filter.is_active))
 
     if is_admin:
         sort_by = query_data.sort_by or CategorySortBy.CREATED_AT
@@ -122,14 +109,12 @@ def get_category(db: Session, category_id: int):
         Category,
         category_id,
         detail="Category not found",
-        options=[selectinload(Category.images)],
     )
 
 
 def get_active_category(db: Session, category_id: int):
     category = (
         db.query(Category)
-        .options(selectinload(Category.images))
         .filter(Category.id == category_id, Category.is_active.is_(True))
         .first()
     )
@@ -183,12 +168,7 @@ def update_category(
 
 
 def delete_category(db: Session, category_id: int) -> None:
-    category = crud.get_or_404(
-        db,
-        Category,
-        category_id,
-        detail="Category not found",
-    )
+    category = _get_category_for_update(db, category_id)
 
     product_exists = (
         db.query(Product.id).filter(Product.category_id == category_id).first()
@@ -200,7 +180,7 @@ def delete_category(db: Session, category_id: int) -> None:
         )
 
     try:
-        image_paths = [image.image for image in category.images]
+        image_path = category.image
         db.delete(category)
         db.commit()
     except IntegrityError as exc:
@@ -213,13 +193,9 @@ def delete_category(db: Session, category_id: int) -> None:
         db.rollback()
         raise
 
-    for image_path in image_paths:
-        delete_unused_uploaded_image(
-            db,
-            CategoryImage.image,
-            image_path,
-            CATEGORY_IMAGE_SUBDIRECTORY,
-        )
+    delete_unused_uploaded_image(
+        db, Category.image, image_path, CATEGORY_IMAGE_SUBDIRECTORY
+    )
 
 
 def _get_category_for_update(db: Session, category_id: int) -> Category:
@@ -231,34 +207,24 @@ def _get_category_for_update(db: Session, category_id: int) -> Category:
     )
 
 
-def list_category_images(db: Session, category_id: int):
-    return image_collection.list_images(db, CATEGORY_IMAGES, category_id)
-
-
-def upload_category_images(
-    db: Session,
-    category_id: int,
-    files: list[UploadFile],
-):
-    _get_category_for_update(db, category_id)
-    return image_collection.upload_images(
-        db,
-        CATEGORY_IMAGES,
-        category_id,
-        files,
+def replace_category_image(
+    db: Session, category_id: int, image: UploadFile | None
+) -> Category:
+    category = _get_category_for_update(db, category_id)
+    previous = category.image
+    uploaded = None
+    try:
+        if image is not None:
+            filename = optimize_category_upload(image)
+            uploaded = f"/uploads/{CATEGORY_IMAGE_SUBDIRECTORY}/{filename}"
+        category.image = uploaded
+        db.commit()
+    except Exception:
+        db.rollback()
+        if uploaded:
+            delete_uploaded_image(uploaded, CATEGORY_IMAGE_SUBDIRECTORY)
+        raise
+    delete_unused_uploaded_image(
+        db, Category.image, previous, CATEGORY_IMAGE_SUBDIRECTORY
     )
-
-
-def set_primary_category_image(db: Session, category_id: int, image_id: int):
-    _get_category_for_update(db, category_id)
-    return image_collection.set_primary_image(
-        db,
-        CATEGORY_IMAGES,
-        category_id,
-        image_id,
-    )
-
-
-def delete_category_image(db: Session, category_id: int, image_id: int) -> None:
-    _get_category_for_update(db, category_id)
-    image_collection.delete_image(db, CATEGORY_IMAGES, category_id, image_id)
+    return category

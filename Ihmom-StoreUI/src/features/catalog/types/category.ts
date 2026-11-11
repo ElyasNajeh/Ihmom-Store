@@ -6,21 +6,13 @@ import {
 } from '@/features/catalog/schemas/categories.ts';
 import type { Query } from '@/shared/types/query.ts';
 
-export interface CategoryImage {
-    id: number;
-    category_id: number;
-    image: string;
-    is_primary: boolean;
-    created_at: string;
-}
-
 export interface Category {
     id: number;
     name_ar: string;
     name_en: string;
     is_active: boolean;
     created_at: string;
-    images: CategoryImage[];
+    image: string | null;
 }
 
 export type CreateCategory = z.infer<typeof createCategorySchema>;

@@ -7,7 +7,6 @@ from app.core.config import settings
 from app.db.base import Base
 
 # Import all models to register their tables in Base.metadata.
-from app.db import rate_limit as rate_limit_model
 from app.features.admins import model as admins_model
 from app.features.auth import model as auth_model
 from app.features.brands import model as brands_model
@@ -19,7 +18,6 @@ from app.features.products import model as products_model
 from app.features.sliders import model as sliders_model
 
 _REGISTERED_MODELS = (
-    rate_limit_model,
     admins_model,
     auth_model,
     brands_model,
@@ -39,6 +37,11 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def include_object(obj, name, type_, reflected, compare_to):
+    # This forward-migration archive is deliberately not an application model.
+    return not (type_ == "table" and name == "category_image_migration_archive")
+
+
 def run_migrations_offline() -> None:
     context.configure(
         url=settings.DATABASE_URL,
@@ -46,6 +49,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -64,6 +68,7 @@ def run_migrations_online() -> None:
                 connection=connection,
                 target_metadata=target_metadata,
                 compare_type=True,
+                include_object=include_object,
             )
 
             with context.begin_transaction():

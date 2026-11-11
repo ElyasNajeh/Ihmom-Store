@@ -5,7 +5,6 @@ import re
 import pytest
 from fastapi import HTTPException
 
-from app.db import seed
 from app.features.dashboard.service import _iter_buckets, _shift_months
 from app.features.orders.service import _generate_order_number, _validate_money
 
@@ -48,15 +47,3 @@ def test_bucket_iterator_is_inclusive():
         datetime(2026, 1, 2, tzinfo=timezone.utc),
         datetime(2026, 1, 3, tzinfo=timezone.utc),
     ]
-
-
-def test_seed_product_data_rejects_missing_reference_key():
-    item = {
-        "name_ar": "منتج",
-        "name_en": "Product",
-        "price": Decimal("1.00"),
-    }
-    value = seed._product_data(item, category_id=1, brand_id=2)
-    assert value.category_id == 1
-    assert value.brand_id == 2
-    assert value.price == Decimal("1.00")

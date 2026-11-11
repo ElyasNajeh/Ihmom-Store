@@ -7,6 +7,7 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from app.core.config import settings
+from app.shared.phone import phone_identity
 
 
 redis_client = Redis.from_url(settings.REDIS_URL, decode_responses=True)
@@ -165,6 +166,61 @@ async def verify_redis() -> None:
         await redis_client.ping()
     except RedisError as exc:
         raise RuntimeError("Redis is required for security rate limiting") from exc
+
+
+_HISTORY_SCRIPT = """
+local now = redis.call('TIME')
+local now_ms = (now[1] * 1000) + math.floor(now[2] / 1000)
+local window = tonumber(ARGV[1])
+local retry_after = 0
+for i, key in ipairs(KEYS) do
+  redis.call('ZREMRANGEBYSCORE', key, '-inf', now_ms - window)
+  if redis.call('ZCARD', key) >= tonumber(ARGV[i + 2]) then
+    local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
+    retry_after = math.max(retry_after, math.ceil((tonumber(oldest[2]) + window - now_ms) / 1000))
+  end
+end
+if retry_after > 0 then return retry_after end
+for _, key in ipairs(KEYS) do
+  redis.call('ZADD', key, now_ms, ARGV[2])
+  redis.call('PEXPIRE', key, window)
+end
+return 0
+"""
+
+
+async def enforce_order_history_limit(ip_address: str, phone: str) -> None:
+    keys = [
+        _identity("order_history:ip", ip_address),
+        _identity("order_history:phone", phone_identity(phone)),
+        _identity("order_history:global", "global"),
+    ]
+    try:
+        retry_after = int(
+            await _eval(
+                _HISTORY_SCRIPT,
+                keys,
+                [
+                    settings.ORDER_HISTORY_RATE_WINDOW_SECONDS * 1000,
+                    str(uuid4()),
+                    settings.ORDER_HISTORY_RATE_LIMIT_PER_IP,
+                    settings.ORDER_HISTORY_RATE_LIMIT_PER_PHONE,
+                    settings.ORDER_HISTORY_RATE_LIMIT_GLOBAL,
+                ],
+            )
+        )
+    except HTTPException as exc:
+        exc.headers = {**(exc.headers or {}), "Cache-Control": "no-store"}
+        raise
+    if retry_after:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many verification attempts. Please try again later.",
+            headers={
+                "Retry-After": str(max(1, retry_after)),
+                "Cache-Control": "no-store",
+            },
+        )
 
 
 async def close_redis() -> None:

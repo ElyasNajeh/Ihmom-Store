@@ -8,7 +8,7 @@ from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from psycopg2 import sql
-from sqlalchemy import create_engine, inspect, select
+from sqlalchemy import create_engine, inspect, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import NullPool
 
@@ -43,7 +43,14 @@ def _admin_connection(database="postgres"):
 def test_migrated_schema_matches_sqlalchemy_metadata(test_engine):
     with test_engine.connect() as connection:
         context = MigrationContext.configure(
-            connection, opts={"compare_type": True, "compare_server_default": True}
+            connection,
+            opts={
+                "compare_type": True,
+                "compare_server_default": True,
+                "include_object": lambda obj, name, type_, reflected, compare_to: not (
+                    type_ == "table" and name == "category_image_migration_archive"
+                ),
+            },
         )
         differences = compare_metadata(context, Base.metadata)
     assert differences == []
@@ -59,7 +66,10 @@ def test_expected_constraints_are_present(test_engine):
         item["column_names"] == ["sku"]
         for item in inspector.get_unique_constraints("product_variants")
     )
-    assert any(item["name"] == "ck_order_items_quantity_positive" for item in inspector.get_check_constraints("order_items"))
+    assert any(
+        item["name"] == "ck_order_items_quantity_positive"
+        for item in inspector.get_check_constraints("order_items")
+    )
     assert inspector.get_columns("orders")[0]["nullable"] is False
 
 
@@ -116,15 +126,74 @@ def test_migrations_upgrade_and_downgrade_disposable_database(monkeypatch):
     admin.autocommit = True
     try:
         with admin.cursor() as cursor:
-            cursor.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(database_name)))
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {}").format(sql.Identifier(database_name))
+            )
         monkeypatch.setattr(settings, "DATABASE_NAME", database_name)
+        command.upgrade(_config(), "c7a9e2b4d6f8")
+        engine = create_engine(settings.DATABASE_URL, poolclass=NullPool)
+        try:
+            with engine.begin() as connection:
+                connection.execute(
+                    text("""
+                    INSERT INTO categories (id, name_ar, name_en, is_active, created_at) VALUES
+                        (9001, 'Primary', 'Primary', true, now()),
+                        (9002, 'Fallback', 'Fallback', true, now()),
+                        (9003, 'Empty', 'Empty', true, now());
+                    INSERT INTO category_images (id, category_id, image, is_primary, created_at) VALUES
+                        (9101, 9001, '/uploads/categories/old.webp', false, now() - interval '2 days'),
+                        (9102, 9001, '/uploads/categories/primary.webp', true, now()),
+                        (9103, 9002, '/uploads/categories/first.webp', false, now() - interval '1 day'),
+                        (9104, 9002, '/uploads/categories/last.webp', false, now());
+                    INSERT INTO rate_limit_counters (bucket_key, window_start, count, expires_at)
+                        VALUES ('test-only', now(), 1, now() + interval '1 minute');
+                """)
+                )
+        finally:
+            engine.dispose()
         command.upgrade(_config(), "head")
         engine = create_engine(settings.DATABASE_URL, poolclass=NullPool)
         try:
             assert "orders" in inspect(engine).get_table_names()
+            assert "rate_limit_counters" not in inspect(engine).get_table_names()
+            assert "category_images" not in inspect(engine).get_table_names()
+            assert "image" in {
+                c["name"] for c in inspect(engine).get_columns("categories")
+            }
+            with engine.connect() as connection:
+                images = dict(
+                    connection.execute(text("SELECT id, image FROM categories")).all()
+                )
+                assert images == {
+                    9001: "/uploads/categories/primary.webp",
+                    9002: "/uploads/categories/first.webp",
+                    9003: None,
+                }
+                assert (
+                    connection.scalar(
+                        text("SELECT count(*) FROM category_image_migration_archive")
+                    )
+                    == 4
+                )
+        finally:
+            engine.dispose()
+        command.downgrade(_config(), "c7a9e2b4d6f8")
+        engine = create_engine(settings.DATABASE_URL, poolclass=NullPool)
+        try:
+            with engine.connect() as connection:
+                assert (
+                    connection.scalar(text("SELECT count(*) FROM category_images")) == 4
+                )
+                assert (
+                    connection.scalar(
+                        text("SELECT image FROM category_images WHERE id=9102")
+                    )
+                    == "/uploads/categories/primary.webp"
+                )
             assert "rate_limit_counters" in inspect(engine).get_table_names()
         finally:
             engine.dispose()
+        command.upgrade(_config(), "head")
         command.downgrade(_config(), "base")
         engine = create_engine(settings.DATABASE_URL, poolclass=NullPool)
         try:
@@ -137,7 +206,11 @@ def test_migrations_upgrade_and_downgrade_disposable_database(monkeypatch):
                 "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s",
                 (database_name,),
             )
-            cursor.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(database_name)))
+            cursor.execute(
+                sql.SQL("DROP DATABASE IF EXISTS {}").format(
+                    sql.Identifier(database_name)
+                )
+            )
         admin.close()
 
 
@@ -147,5 +220,5 @@ def test_migration_chain_has_one_head_and_no_orphans():
     scripts = ScriptDirectory.from_config(_config())
     assert len(scripts.get_heads()) == 1
     revisions = list(scripts.walk_revisions())
-    assert len(revisions) == 4
+    assert len(revisions) == 6
     assert revisions[-1].down_revision is None

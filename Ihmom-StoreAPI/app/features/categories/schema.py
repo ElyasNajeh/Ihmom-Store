@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from enum import Enum
 from typing import Annotated
@@ -23,7 +22,6 @@ from app.constants.query import (
 )
 from app.shared.schema import (
     FilterBase,
-    ImageResponseBase,
     PageResponse,
     QueryBase,
 )
@@ -103,17 +101,13 @@ class CategoryUpdate(BaseModel):
         return value
 
 
-class CategoryImageResponse(ImageResponseBase):
-    category_id: int
-
-
 class CategoryResponse(BaseModel):
     id: int
     name_ar: str
     name_en: str
     is_active: bool
     created_at: datetime
-    images: list[CategoryImageResponse]
+    image: str | None
 
     model_config = ConfigDict(from_attributes=True)
 

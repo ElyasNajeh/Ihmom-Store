@@ -14,6 +14,7 @@ from app.features.categories import model as categories_model
 from app.features.customers import model as customers_model
 from app.features.delivery_areas import model as delivery_areas_model
 from app.features.orders import model as orders_model
+from app.features.notifications import model as notifications_model
 from app.features.products import model as products_model
 from app.features.sliders import model as sliders_model
 
@@ -25,6 +26,7 @@ _REGISTERED_MODELS = (
     customers_model,
     delivery_areas_model,
     orders_model,
+    notifications_model,
     products_model,
     sliders_model,
 )

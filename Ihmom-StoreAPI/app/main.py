@@ -17,6 +17,7 @@ from app.features.delivery_areas.router import router as delivery_areas_router
 from app.features.orders.router import router as orders_router
 from app.features.products.router import router as products_router
 from app.features.sliders.router import router as sliders_router
+from app.features.notifications.webhook import router as notifications_router
 
 openapi_tags = [
     {
@@ -112,6 +113,7 @@ app.include_router(delivery_areas_router)
 app.include_router(products_router)
 app.include_router(orders_router)
 app.include_router(dashboard_router)
+app.include_router(notifications_router)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_ROOT), name="uploads")
 
 

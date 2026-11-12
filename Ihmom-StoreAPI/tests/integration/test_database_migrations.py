@@ -147,6 +147,23 @@ def test_migrations_upgrade_and_downgrade_disposable_database(monkeypatch):
                         (9104, 9002, '/uploads/categories/last.webp', false, now());
                     INSERT INTO rate_limit_counters (bucket_key, window_start, count, expires_at)
                         VALUES ('test-only', now(), 1, now() + interval '1 minute');
+                    INSERT INTO brands (id, name_ar, name_en, created_at) VALUES
+                        (9201, 'Historical brand', 'Historical brand', now());
+                    INSERT INTO delivery_areas (id, name_ar, name_en, delivery_fee, created_at) VALUES
+                        (9202, 'Historical area', 'Historical area', 2, now());
+                    INSERT INTO products (id, category_id, brand_id, name_ar, name_en, created_at) VALUES
+                        (9301, 9001, 9201, 'Current name', 'Current name', now());
+                    INSERT INTO product_variants (id, product_id, name_ar, name_en, sku, price, created_at) VALUES
+                        (9401, 9301, '__default__', '__default__', 'historical-migration', 9.5, now());
+                    INSERT INTO customers (id, name, phone, created_at) VALUES
+                        (9402, 'Historical customer', '+970599000123', now());
+                    INSERT INTO orders (id, order_number, customer_id, customer_name, customer_phone,
+                        delivery_area_id, address, subtotal, delivery_fee, total, status, created_at) VALUES
+                        (9501, 'IHM-historical', 9402, 'Historical customer', '+970599000123',
+                         9202, 'Test-only address', 9.5, 2, 11.5, 'delivered', now() - interval '30 days');
+                    INSERT INTO order_items (id, order_id, product_variant_id, product_name_ar,
+                        product_name_en, quantity, unit_price, total, created_at) VALUES
+                        (9502, 9501, 9401, 'Purchased name', 'Purchased name', 1, 9.5, 9.5, now());
                 """)
                 )
         finally:
@@ -161,6 +178,9 @@ def test_migrations_upgrade_and_downgrade_disposable_database(monkeypatch):
                 c["name"] for c in inspect(engine).get_columns("categories")
             }
             with engine.connect() as connection:
+                assert connection.scalar(text("SELECT count(*) FROM order_notifications")) == 0
+                assert connection.scalar(text("SELECT total FROM orders WHERE id=9501")) == Decimal("11.50")
+                assert connection.scalar(text("SELECT product_name_en FROM order_items WHERE id=9502")) == "Purchased name"
                 images = dict(
                     connection.execute(text("SELECT id, image FROM categories")).all()
                 )
@@ -220,5 +240,5 @@ def test_migration_chain_has_one_head_and_no_orphans():
     scripts = ScriptDirectory.from_config(_config())
     assert len(scripts.get_heads()) == 1
     revisions = list(scripts.walk_revisions())
-    assert len(revisions) == 6
+    assert len(revisions) == 7
     assert revisions[-1].down_revision is None

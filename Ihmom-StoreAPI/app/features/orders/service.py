@@ -17,6 +17,7 @@ from app.features.categories.model import Category
 from app.features.customers.service import get_or_create_customer
 from app.features.delivery_areas.model import DeliveryArea
 from app.features.orders.model import Order, OrderItem
+from app.features.notifications.model import OrderNotification
 from app.features.orders.schema import (
     CheckoutRequest,
     OrderQuery,
@@ -354,6 +355,10 @@ def checkout(
             "request_fingerprint": fingerprint,
         }
         order = _insert_order_with_number_retry(db, order_values, item_values)
+        if settings.BIRD_NOTIFICATIONS_ENABLED:
+            # Durable intent only: the worker performs all provider/config work.
+            # This insert participates in the SAME commit as the order/items.
+            db.add(OrderNotification(order_id=order.id))
         db.commit()
         order = get_order(db, order.id)
         return _checkout_response(order)

@@ -103,6 +103,23 @@ services:
         python -m alembic upgrade head &&
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
+  notifications:
+    build:
+      context: ./Ihmom-StoreAPI
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./Ihmom-StoreAPI/app:/app/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: ["python", "-m", "app.features.notifications.worker"]
+    stop_grace_period: 60s
+
   # =========================
   # React / Vite
   # =========================
@@ -114,8 +131,13 @@ services:
     container_name: ihmom-store-ui
     restart: unless-stopped
 
-    env_file:
-      - .env
+    # Frontend receives only public Vite settings, never backend/Bird secrets.
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-}
+      VITE_DEVELOPMENT_API_URL: ${VITE_DEVELOPMENT_API_URL:-http://localhost:8000}
+      VITE_DEVELOPMENT_API_PROXY_TARGET: ${VITE_DEVELOPMENT_API_PROXY_TARGET:-http://localhost:8000}
+      VITE_DEPLOYMENT_API_URL: ${VITE_DEPLOYMENT_API_URL:-}
+      VITE_DEPLOYMENT_API_PROXY_TARGET: ${VITE_DEPLOYMENT_API_PROXY_TARGET:-}
 
     ports:
       - "5173:5173"

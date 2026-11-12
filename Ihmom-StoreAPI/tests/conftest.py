@@ -59,6 +59,10 @@ os.environ.update(
         "COOKIE_SECURE": "false",
         "COOKIE_SAMESITE": "strict",
         "REDIS_URL": "redis://127.0.0.1:57279/15",
+        "BIRD_NOTIFICATIONS_ENABLED": "false",
+        "BIRD_API_KEY": "",
+        "BIRD_ORDER_NOTIFICATION_PHONE": "",
+        "BIRD_WEBHOOK_SECRET": "",
     }
 )
 
@@ -74,6 +78,27 @@ from app.features.categories.model import Category  # noqa: E402
 from app.features.delivery_areas.model import DeliveryArea  # noqa: E402
 from app.features.products.model import Product, ProductVariant  # noqa: E402
 from app.main import app  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def prohibit_real_bird_requests(monkeypatch):
+    """Any new test must explicitly inject a mock transport to exercise Bird."""
+    import httpx
+    from app.features.notifications.bird import BirdClient
+
+    original = BirdClient.__init__
+    unexpected = []
+
+    def reject(request):
+        unexpected.append(True)
+        raise AssertionError("Real Bird HTTP is prohibited in automated tests")
+
+    def guarded(self, config, transport=None):
+        original(self, config, transport=transport or httpx.MockTransport(reject))
+
+    monkeypatch.setattr(BirdClient, "__init__", guarded)
+    yield
+    assert not unexpected, "Bird requests require an explicit mocked transport"
 
 
 @dataclass(frozen=True)

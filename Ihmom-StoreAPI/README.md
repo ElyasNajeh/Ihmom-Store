@@ -1,5 +1,11 @@
 # Ihmom Store API
 
+Optional owner-only WhatsApp order notifications use a PostgreSQL transactional
+outbox and the `notifications` Compose worker. They are disabled by default.
+See [Bird setup, retry/delivery semantics and deployment](docs/BIRD_NOTIFICATIONS.md)
+for private environment configuration and safe operator commands. Checkout never
+calls Bird; Redis authentication/checkout limits remain unchanged.
+
 FastAPI backend for the bilingual catalog, guest cash-on-delivery checkout,
 admin dashboard, order history and invoices. Runtime dependencies are declared
 in `requirements.txt`; testing dependencies are in `requirements-dev.txt`.

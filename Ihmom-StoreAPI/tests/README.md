@@ -1,5 +1,12 @@
 # Backend test suite
 
+Owner-notification regressions are in `unit/test_notifications.py` and
+`integration/test_notifications.py`, with shared fictitious credentials/signing
+helpers in `notification_helpers.py`. All Bird HTTP must use mock transports;
+the test guard rejects accidental real requests. Proxy tests also start the
+production worker with notifications disabled. See the
+[notification operations guide](../docs/BIRD_NOTIFICATIONS.md) for setup and commands.
+
 The suite is intentionally isolated from application data. Its disposable
 services are defined in `tests/docker-compose.test.yml`:
 

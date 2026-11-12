@@ -28,7 +28,7 @@ def compose(*args, input=None, timeout=120):
         [*COMPOSE, *args], input=input, text=True, encoding="utf-8", errors="replace",
         capture_output=True, timeout=timeout,
     )
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == 0, (result.stdout + result.stderr)[-6000:]
     return result.stdout
 
 
@@ -37,7 +37,11 @@ def proxy_stack():
     # Refuse to adopt a previously running project or remove pre-existing data.
     assert not compose("ps", "--all", "--quiet").strip(), "Proxy test project already exists"
     try:
-        compose("up", "-d", "--build", "--wait", timeout=600)
+        try:
+            compose("up", "-d", "--build", "--wait", timeout=600)
+        except AssertionError as exc:
+            logs = compose("logs", "--no-color", "--tail", "20", "api", "ui", "edge", "notifications")
+            raise AssertionError(str(exc) + "\n" + logs) from None
         yield
     finally:
         compose("down", "--timeout", "10")
@@ -179,3 +183,29 @@ def test_production_compose_has_exact_proxy_trust_and_preserves_vps_bindings():
     assert config["networks"]["proxy"]["ipam"]["config"] == [{
         "subnet": "172.30.254.0/29", "gateway": "172.30.254.1",
     }]
+    worker = config["services"]["notifications"]
+    assert worker["restart"] == "unless-stopped"
+    assert "ports" not in worker and set(worker["networks"]) == {"default"}
+    assert worker["command"] == ["python", "-m", "app.features.notifications.worker"]
+
+
+def test_notification_worker_starts_after_migrations_and_does_not_send_when_disabled():
+    output = compose("logs", "--no-color", "notifications")
+    assert "notification_worker_paused code=disabled" in output
+    assert "Traceback" not in output
+    compose("exec", "-T", "notifications", "python", "-c",
+            "from app.features.notifications.worker import worker_database; "
+            "from app.features.notifications.worker import schema_ready; "
+            "from sqlalchemy.orm import configure_mappers; configure_mappers(); "
+            "engine, factory = worker_database(); assert schema_ready(factory); engine.dispose()")
+
+
+def test_development_ui_receives_only_public_settings():
+    result = subprocess.run([
+        "docker", "compose", "--env-file", str(ROOT / ".env.example"),
+        "-f", str(ROOT / "docker-compose.yml"), "config", "--no-env-resolution", "--format", "json",
+    ], text=True, encoding="utf-8", capture_output=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    ui = json.loads(result.stdout)["services"]["ui"]
+    assert "env_file" not in ui
+    assert all(key.startswith("VITE_") for key in ui["environment"])

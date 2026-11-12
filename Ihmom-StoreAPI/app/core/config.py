@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
@@ -22,6 +22,27 @@ class Settings(BaseSettings):
     CHECKOUT_RATE_WINDOW_SECONDS: int = Field(default=60, ge=1)
     CHECKOUT_RATE_LIMIT_PER_IP: int = Field(default=30, ge=1)
     RATE_LIMIT_KEY_PREFIX: str = "ihmom:rate-limit"
+
+    # Bird configuration is validated by the worker, never by checkout startup.
+    # Keep optional values as strings so a typo cannot take ordering offline.
+    BIRD_NOTIFICATIONS_ENABLED: bool = False
+    BIRD_API_KEY: SecretStr = SecretStr("")
+    BIRD_API_URL: str = "https://eu1.platform.bird.com/v1/whatsapp/messages"
+    BIRD_ORDER_NOTIFICATION_PHONE: str = ""
+    BIRD_ORDER_TEMPLATE: str = "bird_order_confirmation"
+    BIRD_ORDER_TEMPLATE_LANGUAGE: str = "en"
+    BIRD_WEBHOOK_SECRET: SecretStr = SecretStr("")
+    BIRD_MAX_ATTEMPTS: str = "6"
+    BIRD_POLL_SECONDS: str = "5"
+    BIRD_STATUS_POLL_SECONDS: str = "60"
+    BIRD_STATUS_MAX_CHECKS: str = "48"
+    BIRD_CONNECT_TIMEOUT_SECONDS: str = "5"
+    BIRD_READ_TIMEOUT_SECONDS: str = "10"
+
+    @field_validator("BIRD_NOTIFICATIONS_ENABLED", mode="before")
+    @classmethod
+    def optional_bird_enabled(cls, value):
+        return value is True or str(value).strip().lower() in {"true", "1", "yes", "on"}
 
     SECRET_KEY: str
 

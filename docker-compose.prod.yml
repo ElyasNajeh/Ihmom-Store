@@ -97,6 +97,23 @@ services:
         python -m alembic upgrade head &&
         exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips ${IHMOM_PROXY_UI_IP:-172.30.254.3}
 
+  # Durable owner notifications; no ports, uploads, proxy network or Redis.
+  notifications:
+    build:
+      context: ./Ihmom-StoreAPI
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    # Wait for API-owned migrations; never run concurrent Alembic upgrades.
+    command: ["python", "-m", "app.features.notifications.worker"]
+    stop_grace_period: 60s
+
   # =========================
   # React Production Build
   # =========================

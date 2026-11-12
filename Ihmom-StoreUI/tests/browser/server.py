@@ -15,6 +15,7 @@ os.environ.update({
     "APP_NAME": "Ihmom Browser Test", "COOKIE_SECURE": "false",
     "CORS_ORIGINS": "http://127.0.0.1:4173",
     "UPLOAD_ROOT": str(Path(tempfile.gettempdir()) / "ihmom-browser-test-uploads"),
+    "BIRD_NOTIFICATIONS_ENABLED": "false", "BIRD_API_KEY": "", "BIRD_WEBHOOK_SECRET": "",
 })
 from alembic.config import Config
 from alembic import command

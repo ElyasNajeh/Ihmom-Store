@@ -1,6 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { LoaderCircle, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+import { Button } from '@/shared/components/ui/button.tsx';
 
 export interface PickedLocation {
     lat: number;
@@ -25,7 +29,7 @@ interface DeliveryLocationMapProps {
 function createMarker(
     map: L.Map,
     location: PickedLocation,
-    onChange: (value: PickedLocation) => void,
+    onChange: (location: PickedLocation) => void,
 ) {
     const marker = L.marker([location.lat, location.lng], {
         icon: pinIcon,
@@ -33,22 +37,91 @@ function createMarker(
     }).addTo(map);
 
     marker.on('dragend', () => {
-        const point = marker.getLatLng();
-        onChange({ lat: point.lat, lng: point.lng });
+        const position = marker.getLatLng();
+
+        onChange({
+            lat: position.lat,
+            lng: position.lng,
+        });
     });
 
     return marker;
 }
 
 export default function DeliveryLocationMap({ value, onChange, label }: DeliveryLocationMapProps) {
+    const { t } = useTranslation('support');
+
+    const [isLocating, setIsLocating] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<L.Map | null>(null);
     const markerRef = useRef<L.Marker | null>(null);
     const onChangeRef = useRef(onChange);
+    const mountedRef = useRef(false);
 
     useEffect(() => {
         onChangeRef.current = onChange;
     }, [onChange]);
+
+    useEffect(() => {
+        mountedRef.current = true;
+
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
+
+    function updateLocation(location: PickedLocation) {
+        setLocationError(null);
+        onChangeRef.current(location);
+    }
+
+    function requestCurrentLocation() {
+        if (!navigator.geolocation) {
+            setLocationError(t('contact.form.location.errors.unsupported'));
+            return;
+        }
+
+        if (!window.isSecureContext) {
+            setLocationError(t('contact.form.location.errors.insecure'));
+            return;
+        }
+
+        setIsLocating(true);
+        setLocationError(null);
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                if (!mountedRef.current) return;
+
+                updateLocation({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                });
+
+                setIsLocating(false);
+            },
+            (error) => {
+                if (!mountedRef.current) return;
+
+                const errorKey =
+                    error.code === 1
+                        ? 'permissionDenied'
+                        : error.code === 2
+                          ? 'unavailable'
+                          : 'timeout';
+
+                setLocationError(t(`contact.form.location.errors.${errorKey}`));
+                setIsLocating(false);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0,
+            },
+        );
+    }
 
     useEffect(() => {
         const container = containerRef.current;
@@ -70,38 +143,39 @@ export default function DeliveryLocationMap({ value, onChange, label }: Delivery
         }).addTo(map);
 
         if (value) {
-            markerRef.current = createMarker(map, value, (location) =>
-                onChangeRef.current(location),
-            );
+            markerRef.current = createMarker(map, value, updateLocation);
         }
 
-        map.on('click', (event: L.LeafletMouseEvent) => {
-            const location = { lat: event.latlng.lat, lng: event.latlng.lng };
+        map.on('click', (event) => {
+            const location = {
+                lat: event.latlng.lat,
+                lng: event.latlng.lng,
+            };
 
             if (markerRef.current) {
-                markerRef.current.setLatLng([location.lat, location.lng]);
+                markerRef.current.setLatLng(event.latlng);
             } else {
-                markerRef.current = createMarker(map, location, (next) =>
-                    onChangeRef.current(next),
-                );
+                markerRef.current = createMarker(map, location, updateLocation);
             }
 
-            onChangeRef.current(location);
+            updateLocation(location);
         });
 
         const frame = window.requestAnimationFrame(() => map.invalidateSize());
         const handleResize = () => map.invalidateSize();
+
         window.addEventListener('resize', handleResize);
 
         return () => {
             window.cancelAnimationFrame(frame);
             window.removeEventListener('resize', handleResize);
+
             map.remove();
+
             mapRef.current = null;
             markerRef.current = null;
         };
-        // The map is created once; the marker position is synchronised below.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
     useEffect(() => {
@@ -119,9 +193,7 @@ export default function DeliveryLocationMap({ value, onChange, label }: Delivery
         const marker = markerRef.current;
 
         if (!marker) {
-            markerRef.current = createMarker(map, value, (location) =>
-                onChangeRef.current(location),
-            );
+            markerRef.current = createMarker(map, value, updateLocation);
             map.setView([value.lat, value.lng], 15);
 
             return;
@@ -131,9 +203,39 @@ export default function DeliveryLocationMap({ value, onChange, label }: Delivery
 
         if (current.lat !== value.lat || current.lng !== value.lng) {
             marker.setLatLng([value.lat, value.lng]);
-            map.panTo([value.lat, value.lng]);
+            map.setView([value.lat, value.lng], 15);
         }
     }, [value]);
 
-    return <div ref={containerRef} aria-label={label} className="h-64 w-full" />;
+    return (
+        <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-10"
+                    onClick={requestCurrentLocation}
+                    disabled={isLocating}
+                >
+                    {isLocating ? (
+                        <LoaderCircle className="me-2 size-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                        <MapPin className="me-2 size-4" aria-hidden="true" />
+                    )}
+
+                    {isLocating
+                        ? t('contact.form.location.locating')
+                        : t('contact.form.location.useCurrentLocation')}
+                </Button>
+            </div>
+
+            {locationError && (
+                <p role="alert" className="text-destructive text-xs leading-5">
+                    {locationError}
+                </p>
+            )}
+
+            <div ref={containerRef} aria-label={label} className="h-64 w-full" />
+        </div>
+    );
 }

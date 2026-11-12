@@ -5,7 +5,21 @@
         "titleEmphasis": "curated with care.",
         "exploreStore": "Explore the store",
         "findUs": "Find us & hours",
-        "imageAlt": "Ihmom Store interior and merchandise display",
+        "imageAlt": "Ihmom Store exterior with Arabic storefront signage and glass entrance",
+        "gallery": {
+            "accessories": {
+                "label": "Phone accessories",
+                "alt": "Phone cases, cables and packaged accessories on a wall display at Ihmom Store"
+            },
+            "games": {
+                "label": "Toys & games",
+                "alt": "Toy cars, balls and boxed games displayed on shelves at Ihmom Store"
+            },
+            "shishaVape": {
+                "label": "Shishas & vapes",
+                "alt": "Hookahs on shelves and stacked charcoal boxes in Ihmom Store’s"
+            }
+        },
         "welcome": "Welcome to",
         "ourFocus": "Our focus",
         "focusItems": "Mobile gear & lifestyle goods",

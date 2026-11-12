@@ -128,7 +128,7 @@ export function FeaturedProducts({ products, isLoading, isError }: FeaturedProdu
                                         <span className="text-muted-foreground text-xs font-normal">
                                             {t('featuredProducts.priceFrom')}{' '}
                                         </span>
-                                        {formatPrice(product.starting_price, locale)}
+                                        ₪{formatPrice(product.starting_price, locale)}
                                     </p>
                                 </CardContent>
                             </Link>

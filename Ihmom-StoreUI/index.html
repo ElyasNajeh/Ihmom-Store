@@ -12,9 +12,10 @@
         />
         <meta name="author" content="Ihmom Store" />
         <meta name="application-name" content="Ihmom Store" />
-
         <meta name="theme-color" content="#F5F4F0" />
         <meta name="color-scheme" content="light dark" />
+
+        <link rel="canonical" href="https://ihmom-store.com/" />
 
         <meta property="og:site_name" content="Ihmom Store" />
         <meta property="og:title" content="Ihmom Store | Online Shopping" />
@@ -23,12 +24,16 @@
             property="og:description"
             content="Discover hookahs, vaping products, incense burners, computer accessories, gaming products, and more at Ihmom Store."
         />
-        <meta property="og:url" content="https://YOUR-DOMAIN.com/" />
+        <meta property="og:url" content="https://ihmom-store.com/" />
         <meta
             property="og:image"
-            content="https://YOUR-DOMAIN.com/images/ihmom-store-preview.png"
+            content="https://ihmom-store.com/images/ihmom-store-preview.jpg"
         />
-        <meta property="og:image:alt" content="Ihmom Store online shopping" />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Ihmom Store storefront in Turmus Ayya" />
+        <meta name="twitter:image:alt" content="Ihmom Store storefront in Turmus Ayya" />
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Ihmom Store | Online Shopping" />
@@ -38,11 +43,10 @@
         />
         <meta
             name="twitter:image"
-            content="https://YOUR-DOMAIN.com/images/ihmom-store-preview.png"
+            content="https://ihmom-store.com/images/ihmom-store-preview.jpg"
         />
 
-        <link rel="icon" type="image/png" href="/favicon.png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" href="/icon.png" />
 
         <script>
             (function () {
@@ -63,8 +67,6 @@
                               : 'light';
 
                     root.dataset.theme = theme;
-
-                    // Preserve compatibility with Tailwind/shadcn dark mode.
                     root.classList.toggle('dark', theme === 'dark');
                 } catch {
                     root.dataset.theme = 'light';

@@ -236,37 +236,46 @@ export default function AdminProductsPage() {
                     </span>
                 ),
             },
+
             {
                 id: 'price',
                 header: t('fields.price'),
-                className: 'text-end',
                 cell: (product) => {
                     const prices = product.variants.map((variant) => Number(variant.price));
-                    const min = prices.length ? Math.min(...prices) : 0;
-                    const isSimple = product.variants.some(
-                        (variant) => variant.name_en === DEFAULT_VARIANT_NAME,
-                    );
+                    const minPrice = prices.length ? Math.min(...prices) : null;
+
+                    const isSimple =
+                        product.variants.length === 1 &&
+                        product.variants[0].name_en === DEFAULT_VARIANT_NAME;
 
                     return (
-                        <div className="text-end">
-                            <span className="font-medium tabular-nums">
-                                {isSimple
-                                    ? formatOrderMoney(min, locale)
-                                    : t('products.startingPrice', {
-                                          price: formatOrderMoney(min, locale),
-                                      })}
-                            </span>
-                            <span className="text-muted-foreground mt-0.5 block text-xs">
-                                {isSimple
-                                    ? t('products.simpleBadge')
-                                    : t('products.variantCount', {
-                                          count: product.variants.length,
-                                      })}
-                            </span>
-                        </div>
+                        <>
+                            {minPrice !== null ? (
+                                <>
+                                    {' '}
+                                    <span className="font-medium tabular-nums">
+                                        {isSimple
+                                            ? formatOrderMoney(minPrice, locale)
+                                            : t('products.startingPrice', {
+                                                  price: formatOrderMoney(minPrice, locale),
+                                              })}
+                                    </span>
+                                    <span className="text-muted-foreground mt-0.5 block text-xs">
+                                        {isSimple
+                                            ? t('products.simpleBadge')
+                                            : t('products.variantCount', {
+                                                  count: product.variants.length,
+                                              })}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="text-muted-foreground">—</span>
+                            )}
+                        </>
                     );
                 },
             },
+
             {
                 id: 'status',
                 header: t('fields.status'),

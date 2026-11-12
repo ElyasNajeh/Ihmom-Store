@@ -2,25 +2,32 @@ import { ArrowUpRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
+import {
+    ShopCategoriesIcon,
+    ShoppingOptionsIcon,
+    CustomerSupportIcon,
+    LocalStoreIcon,
+} from '@/../public/illustrations/illustrations.tsx';
+
 const highlights = [
     {
         id: 'categories',
-        image: '/illustrations/shop-categories.png',
+        Icon: ShopCategoriesIcon,
         href: '/shop',
     },
     {
         id: 'options',
-        image: '/illustrations/shopping-options.png',
+        Icon: ShoppingOptionsIcon,
         href: '/shop',
     },
     {
         id: 'support',
-        image: '/illustrations/customer-support.png',
+        Icon: CustomerSupportIcon,
         href: '/contact',
     },
     {
         id: 'local',
-        image: '/illustrations/local-store.png',
+        Icon: LocalStoreIcon,
         href: '/about#contact',
     },
 ] as const;
@@ -47,7 +54,7 @@ export function StoreHighlights() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-                {highlights.map(({ id, image, href }, index) => (
+                {highlights.map(({ id, Icon, href }, index) => (
                     <Link
                         key={id}
                         to={href}
@@ -61,13 +68,9 @@ export function StoreHighlights() {
 
                             <div className="flex items-start justify-between gap-3">
                                 <span className="from-secondary via-card to-brand/15 ring-border/60 grid size-16 place-items-center rounded-2xl bg-linear-to-br ring-1 sm:size-20">
-                                    <img
-                                        src={image}
-                                        alt=""
-                                        width={512}
-                                        height={512}
-                                        loading="lazy"
-                                        className="size-14 object-contain drop-shadow-sm transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110 sm:size-[4.5rem]"
+                                    <Icon
+                                        aria-hidden="true"
+                                        className="size-14 drop-shadow-sm transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110 sm:size-[4.5rem]"
                                     />
                                 </span>
 

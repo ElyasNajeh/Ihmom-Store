@@ -5,6 +5,13 @@ import { Button } from '@/shared/components/ui/button';
 import { storeInfo, getStoreName } from '@/features/storefront/constants/store.ts';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import { scrollToSection } from '@/shared/utils/scroll.ts';
+import { StorePhoto } from './store-photo';
+
+const gallery = [
+    { name: 'accessories_section', key: 'accessories' },
+    { name: 'games_section', key: 'games' },
+    { name: 'shisha_vape_section', key: 'shishaVape' },
+] as const;
 
 export function AboutHero() {
     // Isolated to the 'about' namespace, targeting its 'hero' block directly
@@ -75,17 +82,16 @@ export function AboutHero() {
                 <div className="relative">
                     <div className="bg-brand/20 absolute -end-5 -top-5 size-32 rounded-full blur-2xl" />
                     <div className="border-border bg-secondary relative overflow-hidden rounded-[2rem] border p-2 shadow-xl shadow-black/5">
-                        <img
-                            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1400&h=940&crop=center&q=90"
+                        <StorePhoto
+                            name="general_shop_opening_image"
                             alt={t('imageAlt')}
-                            width={1400}
-                            height={940}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-[360px] w-full rounded-[1.5rem] object-cover sm:h-[470px]"
+                            loading="eager"
+                            fetchPriority="high"
+                            sizes="(min-width: 1280px) 587px, (min-width: 1024px) calc(52.5vw - 85px), (min-width: 640px) calc(100vw - 66px), calc(100vw - 50px)"
+                            className="aspect-4/3 h-auto w-full rounded-[1.5rem] object-contain"
                         />
 
-                        <div className="bg-background/90 absolute inset-x-6 bottom-6 rounded-2xl border border-white/30 p-4 shadow-lg backdrop-blur-md sm:inset-x-8 sm:bottom-8 sm:p-5">
+                        <div className="px-4 py-5 sm:px-5">
                             <p className="text-muted-foreground font-emphasis text-xs tracking-[0.08em] uppercase italic">
                                 {t('welcome')}
                             </p>
@@ -103,9 +109,27 @@ export function AboutHero() {
                 </div>
             </div>
 
+            <div className="mx-auto grid max-w-3xl grid-cols-3 gap-4 px-4 pb-14 sm:gap-8 sm:px-6 sm:pb-20 lg:pb-24">
+                {gallery.map(({ name, key }) => (
+                    <figure key={name} className="min-w-0">
+                        <StorePhoto
+                            name={name}
+                            alt={t(`gallery.${key}.alt`)}
+                            sizes="(min-width: 697px) 195px, (min-width: 640px) calc((100vw - 112px) / 3), calc((100vw - 64px) / 3)"
+                            className="mx-auto aspect-3/4 h-auto max-h-[260px] w-full max-w-[195px] rounded-2xl object-cover"
+                        />
+                        <figcaption className="text-muted-foreground mt-3 text-center text-xs leading-5 sm:text-sm">
+                            {t(`gallery.${key}.label`)}
+                        </figcaption>
+                    </figure>
+                ))}
+            </div>
+
             <div className="border-border bg-card/70 border-y">
                 <div className="mx-auto grid max-w-7xl gap-3 px-4 py-4 text-sm sm:grid-cols-3 sm:px-6 lg:px-8">
-                    <p className="font-medium">{t('bottom.accessories')}</p>
+                    <p className="text-muted-foreground sm:text-center">
+                        {t('bottom.accessories')}
+                    </p>
                     <p className="text-muted-foreground sm:text-center">{t('bottom.selection')}</p>
                     <p className="text-muted-foreground sm:text-start">{t('bottom.questions')}</p>
                 </div>

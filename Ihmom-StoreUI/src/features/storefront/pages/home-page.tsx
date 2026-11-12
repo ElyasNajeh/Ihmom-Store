@@ -5,6 +5,7 @@ import { FeaturedProducts } from '@/features/storefront/components/sections/feat
 import { StoreContact } from '@/features/storefront/components/sections/store-contact';
 import { StoreHighlights } from '@/features/storefront/components/sections/store-highlights';
 import { StoreStats } from '@/features/storefront/components/sections/store-stats';
+import { StorePhoto } from '@/features/storefront/components/sections/store-photo';
 import { WhyShopWithUs } from '@/features/storefront/components/sections/why-shop-with-us';
 import { Reveal } from '@/shared/components/ui/reveal';
 import { HomeHeroCarousel } from '@/features/storefront/components/sections/home-hero-carousel';
@@ -96,7 +97,7 @@ export default function HomePage() {
 
             <Reveal>
                 <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
-                    <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-3xl px-6 py-10 sm:px-10 sm:py-14 lg:px-14">
+                    <div className="bg-primary text-primary-foreground relative grid items-center gap-8 overflow-hidden rounded-3xl px-6 py-10 sm:px-10 sm:py-14 lg:grid-cols-[1fr_240px] lg:gap-14 lg:px-14">
                         <div className="border-primary-foreground/15 pointer-events-none absolute -end-12 -top-20 size-64 rounded-full border sm:size-80" />
                         <div className="border-primary-foreground/10 pointer-events-none absolute -end-2 -top-10 size-48 rounded-full border sm:size-64" />
                         <div className="relative max-w-2xl">
@@ -124,6 +125,12 @@ export default function HomePage() {
                                 </Link>
                             </div>
                         </div>
+                        <StorePhoto
+                            name="combination_accessories_games_shisha_vape_section"
+                            alt={t('aboutCta.imageAlt')}
+                            sizes="(min-width: 320px) 240px, calc(100vw - 80px)"
+                            className="relative mx-auto aspect-3/4 h-auto max-h-[320px] w-full max-w-[240px] rounded-2xl object-contain"
+                        />
                     </div>
                 </section>
             </Reveal>

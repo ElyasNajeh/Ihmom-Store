@@ -1,8 +1,10 @@
 {
     "stats": {
         "sectionLabel": "Store catalogue statistics",
-        "products": "Products to explore",
-        "categories": "Product categories"
+        "products": "Products",
+        "productsDescription": "Products available to explore in our store.",
+        "categories": "Categories",
+        "categoriesDescription": "Categories available to browse in our store."
     },
     "featuredProducts": {
         "eyebrow": "From our catalogue",

@@ -7,11 +7,18 @@ import { BrandMark } from '@/shared/components/brand/brand-mark.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import { getStoreAddress, getStoreName, storeInfo } from '@/features/storefront/constants/store.ts';
 
+import {
+    SecurePaymentsIcon,
+    FastDeliveryIcon,
+    EasyReturnsIcon,
+    QualityGuaranteeIcon,
+} from '@/../public/illustrations/illustrations.tsx';
+
 const trustItems = [
-    { id: 'securePayments', image: '/illustrations/secure-payments.png' },
-    { id: 'fastDelivery', image: '/illustrations/fast-delivery.png' },
-    { id: 'easyReturns', image: '/illustrations/easy-returns.png' },
-    { id: 'qualityGuarantee', image: '/illustrations/quality-guarantee.png' },
+    { id: 'securePayments', Icon: SecurePaymentsIcon },
+    { id: 'fastDelivery', Icon: FastDeliveryIcon },
+    { id: 'easyReturns', Icon: EasyReturnsIcon },
+    { id: 'qualityGuarantee', Icon: QualityGuaranteeIcon },
 ] as const;
 
 export function StoreFooter() {
@@ -40,16 +47,9 @@ export function StoreFooter() {
         <footer className="border-border bg-background border-t">
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
                 <div className="border-border/70 from-secondary/60 via-card to-brand/10 mb-9 grid grid-cols-2 gap-3 rounded-2xl border bg-linear-to-br px-4 py-4 sm:mb-10 sm:grid-cols-4 sm:gap-4 sm:px-5">
-                    {trustItems.map(({ id, image }) => (
+                    {trustItems.map(({ id, Icon }) => (
                         <div key={id} className="flex items-center gap-3">
-                            <img
-                                src={image}
-                                alt=""
-                                width={512}
-                                height={512}
-                                loading="lazy"
-                                className="size-9 shrink-0 object-contain sm:size-10"
-                            />
+                            <Icon aria-hidden="true" className="size-9 shrink-0 sm:size-10" />
                             <span className="text-xs leading-5 font-medium sm:text-sm">
                                 {t(`navigation:footer.trust.${id}`)}
                             </span>

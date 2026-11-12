@@ -23,7 +23,7 @@ export const STORE_PHONE_DISPLAY = '+972 56 600 9514';
 
 export const STORE_PHONE_LINK = '+972566009514';
 
-export const STORE_EMAIL = 'ihmom@gmail.com';
+export const STORE_EMAIL = 'Odamohamad97@gmail.com';
 
 export const STORE_SOCIAL_URLS = {
     INSTAGRAM: 'https://www.instagram.com/ihmom_store?exln=Y3AyZ3o4OTB2bXY0',
@@ -47,12 +47,12 @@ export const storeInfo = {
         {
             id: 'saturdayThursday',
             daysKey: 'contact:hours.saturdayThursday',
-            hoursKey: 'contact:hours.toBeConfirmed',
+            hoursKey: 'contact:hours.time',
         },
         {
             id: 'friday',
             daysKey: 'contact:hours.friday',
-            hoursKey: 'contact:hours.fridayToBeConfirmed',
+            hoursKey: 'contact:hours.fridayStatus',
         },
     ],
 

@@ -279,21 +279,18 @@ export default function AdminDashboardPage() {
                             icon={BadgeCheck}
                             isLoading={isPending}
                         />
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <StatCard
-                                label={t('dashboard.sliders')}
-                                value={data ? formatNumber(data.sliders, locale) : '-'}
-                                icon={LayoutGrid}
-                                isLoading={isPending}
-                            />
-
-                            <StatCard
-                                label={t('dashboard.admins')}
-                                value={data ? formatNumber(data.admins, locale) : '-'}
-                                icon={ShieldCheck}
-                                isLoading={isPending}
-                            />
-                        </div>
+                        <StatCard
+                            label={t('dashboard.sliders')}
+                            value={data ? formatNumber(data.sliders, locale) : '-'}
+                            icon={LayoutGrid}
+                            isLoading={isPending}
+                        />
+                        <StatCard
+                            label={t('dashboard.admins')}
+                            value={data ? formatNumber(data.admins, locale) : '-'}
+                            icon={ShieldCheck}
+                            isLoading={isPending}
+                        />
                     </div>
 
                     {data ? (

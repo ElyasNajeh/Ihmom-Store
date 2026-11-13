@@ -39,12 +39,15 @@ function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
     );
 }
 
+
 function Toast({ className, ...props }: ToastPrimitive.Root.Props) {
+    const isClickable = Boolean(props.toast?.data?.onClick);
+
     return (
         <ToastPrimitive.Root
             data-slot="toast"
             className={cn(
-                'group/toast bg-popover text-popover-foreground focus-visible:border-ring focus-visible:ring-ring/50 pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-2xl border shadow-lg will-change-transform outline-none select-none focus-visible:ring-[3px]',
+                'group/toast bg-popover text-popover-foreground focus-visible:border-ring focus-visible:ring-ring/50 pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom overflow-hidden rounded-2xl border shadow-lg will-change-transform outline-none select-none focus-visible:ring-[3px]',
                 '[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))]',
                 'h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_cubic-bezier(0.22,1,0.36,1),opacity_500ms,height_150ms]',
                 "after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-['']",
@@ -59,12 +62,14 @@ function Toast({ className, ...props }: ToastPrimitive.Root.Props) {
                 'data-expanded:data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))]',
                 'data-expanded:data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))]',
                 'data-expanded:data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))]',
+                isClickable && 'hover:bg-accent/50 cursor-pointer',
                 className,
             )}
             {...props}
         />
     );
 }
+
 
 function ToastContent({ className, ...props }: ToastPrimitive.Content.Props) {
     return (
@@ -177,25 +182,40 @@ function ToastList() {
     const { toasts } = ToastPrimitive.useToastManager<CustomToastData>();
 
     return toasts.map((toastItem) => (
-        <Toast key={toastItem.id} toast={toastItem}>
+        <Toast
+            key={toastItem.id}
+            toast={toastItem}
+            onClick={(event) => {
+                const target = event.target;
+
+                if (target instanceof Element && target.closest('button, a, [role="button"]')) {
+                    return;
+                }
+
+                toastItem.data?.onClick?.();
+            }}
+            className={cn(toastItem.data?.onClick && 'cursor-pointer')}
+        >
             <ToastContent
                 className={cn(
-                    'flex h-full items-center',
-                    toastItem.data?.onClick && 'hover:bg-accent/50 cursor-pointer',
+                    'flex h-full items-center rounded-[inherit]',
+                    toastItem.data?.onClick && 'hover:bg-accent/50 transition-colors',
                 )}
-                onClick={toastItem.data?.onClick}
             >
                 <ToastIcon type={toastItem.type} />
+
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <ToastTitle />
                     <ToastDescription />
                 </div>
+
                 <ToastAction />
                 <ToastClose />
             </ToastContent>
         </Toast>
     ));
 }
+
 function Toaster({ children, toastManager = toast, ...props }: ToastPrimitive.Provider.Props) {
     return (
         <ToastProvider toastManager={toastManager} {...props}>

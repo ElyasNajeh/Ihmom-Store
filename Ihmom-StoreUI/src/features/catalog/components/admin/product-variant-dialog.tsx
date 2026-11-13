@@ -242,10 +242,16 @@ export function ProductVariantDialog({
                     </div>
                 </div>
 
-                <div className="border-border flex items-center justify-between rounded-lg border px-3 py-2.5">
-                    <Label htmlFor="variant-active" className="cursor-pointer">
-                        {t('fields.isActive')}
-                    </Label>
+                <div className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+                    <div className="min-w-0">
+                        <Label htmlFor="variant-active" className="cursor-pointer">
+                            {t('fields.isActive')}
+                        </Label>
+                        <p className="text-muted-foreground text-xs">
+                            {t('common.active')} / {t('common.inactive')}
+                        </p>
+                    </div>
+
                     <Switch
                         id="variant-active"
                         checked={isActive}

@@ -206,9 +206,14 @@ export function DeliveryAreaFormDialog({
                     </div>
 
                     <div className="border-border flex items-center justify-between gap-3 self-end rounded-lg border px-3 py-2.5">
-                        <Label htmlFor="area-active" className="cursor-pointer">
-                            {t('fields.isActive')}
-                        </Label>
+                        <div className="min-w-0">
+                            <Label htmlFor="area-active" className="cursor-pointer">
+                                {t('fields.isActive')}
+                            </Label>
+                            <p className="text-muted-foreground text-xs">
+                                {t('common.active')} / {t('common.inactive')}
+                            </p>
+                        </div>
 
                         <Switch
                             id="area-active"

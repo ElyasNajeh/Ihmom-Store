@@ -134,12 +134,13 @@ export function LimitedOffers({ products, isLoading, isError }: LimitedOffersPro
                                         </h3>
                                         <p
                                             dir={isArabic ? 'rtl' : 'ltr'}
-                                            className="mt-3 flex items-center gap-1 text-sm font-semibold">
-                                            <span>
-                                                {formatPrice(product.starting_price, locale)}
-                                            </span>
+                                            className="mt-3 flex items-center gap-1 text-sm font-semibold"
+                                        >
                                             <span className="text-muted-foreground text-xs font-normal">
                                                 {t('priceNote')}
+                                            </span>
+                                            <span>
+                                                {formatPrice(product.starting_price, locale)}
                                             </span>
                                         </p>
                                     </CardContent>

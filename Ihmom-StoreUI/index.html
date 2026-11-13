@@ -1,30 +1,40 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        <title>Ihmom Store | Online Shopping</title>
+        <title>هموم ستور | Ihmom Store - تسوق إلكتروني في فلسطين</title>
 
         <meta
             name="description"
-            content="Shop hookahs, vaping products, incense burners, computer accessories, gaming products, and more at Ihmom Store. Explore products, compare prices, and order online with convenient cash on delivery."
+            content="هموم ستور - Ihmom Store. تسوق الأراجيل والفيب والمبخرات وإكسسوارات الكمبيوتر والألعاب والهواتف في فلسطين. Shop hookahs, vaping products, incense burners, computer accessories, gaming products, and more."
         />
+
         <meta name="author" content="Ihmom Store" />
         <meta name="application-name" content="Ihmom Store" />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
         <meta name="theme-color" content="#F5F4F0" />
         <meta name="color-scheme" content="light dark" />
 
         <link rel="canonical" href="https://ihmom-store.com/" />
 
-        <meta property="og:site_name" content="Ihmom Store" />
-        <meta property="og:title" content="Ihmom Store | Online Shopping" />
+        <!-- Favicons -->
+        <link rel="icon" href="/icon.png" sizes="any" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
+        <link rel="apple-touch-icon" href="/icon.png" />
+
+        <!-- Open Graph -->
+        <meta property="og:site_name" content="Ihmom Store | هموم ستور" />
+        <meta property="og:title" content="هموم ستور | Ihmom Store - تسوق إلكتروني في فلسطين" />
         <meta property="og:type" content="website" />
         <meta
             property="og:description"
-            content="Discover hookahs, vaping products, incense burners, computer accessories, gaming products, and more at Ihmom Store."
+            content="اكتشف منتجات هموم ستور وتسوق إلكترونياً في فلسطين. Discover products and shop online at Ihmom Store."
         />
         <meta property="og:url" content="https://ihmom-store.com/" />
+        <meta property="og:locale" content="ar_PS" />
+        <meta property="og:locale:alternate" content="en_US" />
         <meta
             property="og:image"
             content="https://ihmom-store.com/images/ihmom-store-preview.jpg"
@@ -32,22 +42,42 @@
         <meta property="og:image:type" content="image/jpeg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Ihmom Store storefront in Turmus Ayya" />
-        <meta name="twitter:image:alt" content="Ihmom Store storefront in Turmus Ayya" />
+        <meta property="og:image:alt" content="هموم ستور | Ihmom Store" />
 
+        <!-- Twitter / X -->
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Ihmom Store | Online Shopping" />
+        <meta name="twitter:title" content="هموم ستور | Ihmom Store - Online Shopping" />
         <meta
             name="twitter:description"
-            content="Explore products, compare prices, and order online at Ihmom Store."
+            content="تسوق إلكترونياً في فلسطين | Shop online in Palestine at Ihmom Store."
         />
         <meta
             name="twitter:image"
             content="https://ihmom-store.com/images/ihmom-store-preview.jpg"
         />
+        <meta name="twitter:image:alt" content="هموم ستور | Ihmom Store" />
 
-        <link rel="icon" type="image/png" href="/icon.png" />
+        <!-- Store structured data -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "OnlineStore",
+                "name": "Ihmom Store",
+                "alternateName": "هموم ستور",
+                "url": "https://ihmom-store.com/",
+                "logo": "https://ihmom-store.com/icon.png",
+                "image": "https://ihmom-store.com/images/ihmom-store-preview.jpg",
+                "description": "متجر إلكتروني فلسطيني للتسوق عبر الإنترنت | Palestinian online store.",
+                "areaServed": {
+                    "@type": "Country",
+                    "name": "Palestine"
+                },
+                "currenciesAccepted": "ILS",
+                "paymentAccepted": "Cash on delivery"
+            }
+        </script>
 
+        <!-- Theme and language initialization -->
         <script>
             (function () {
                 const root = document.documentElement;
@@ -81,15 +111,15 @@
                     const language =
                         savedLanguage === 'ar' || savedLanguage === 'en'
                             ? savedLanguage
-                            : browserLanguage === 'ar'
-                              ? 'ar'
-                              : 'en';
+                            : browserLanguage === 'en'
+                              ? 'en'
+                              : 'ar';
 
                     root.lang = language;
                     root.dir = language === 'ar' ? 'rtl' : 'ltr';
                 } catch {
-                    root.lang = 'en';
-                    root.dir = 'ltr';
+                    root.lang = 'ar';
+                    root.dir = 'rtl';
                 }
             })();
         </script>

@@ -47,7 +47,6 @@ import { localizeOptions } from '@/shared/utils/localized-options.ts';
 import { formatOrderDate, formatOrderMoney } from '@/features/orders/utils/order-format.ts';
 import { localizedName } from '@/shared/utils/localized.ts';
 import { apiAssetUrl } from '@/shared/api/axios.ts';
-import { DEFAULT_VARIANT_NAME } from '@/features/catalog/utils/product-variant.ts';
 
 export default function AdminProductsPage() {
     const { t } = useTranslation('admin');
@@ -242,37 +241,25 @@ export default function AdminProductsPage() {
                 id: 'price',
                 header: t('fields.price'),
                 cell: (product) => {
-                    const prices = product.variants.map((variant) => Number(variant.price));
-                    const minPrice = prices.length ? Math.min(...prices) : null;
+                    const minPrice =
+                        product.variants.length > 0
+                            ? Math.min(...product.variants.map((variant) => Number(variant.price)))
+                            : null;
 
-                    const isSimple =
-                        product.variants.length === 1 &&
-                        product.variants[0].name_en === DEFAULT_VARIANT_NAME;
-
-                    return (
+                    return minPrice !== null && Number.isFinite(minPrice) ? (
                         <>
-                            {minPrice !== null ? (
-                                <>
-                                    {' '}
-                                    <span className="font-medium tabular-nums">
-                                        {isSimple
-                                            ? formatOrderMoney(minPrice, locale)
-                                            : t('products.startingPrice', {
-                                                  price: formatOrderMoney(minPrice, locale),
-                                              })}
-                                    </span>
-                                    <span className="text-muted-foreground mt-0.5 block text-xs">
-                                        {isSimple
-                                            ? t('products.simpleBadge')
-                                            : t('products.variantCount', {
-                                                  count: product.variants.length,
-                                              })}
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="text-muted-foreground">—</span>
+                            <span className="font-medium tabular-nums">
+                                {formatOrderMoney(minPrice, locale)}
+                            </span>
+
+                            {product.variants.length > 1 && (
+                                <span className="text-muted-foreground mt-0.5 block text-xs">
+                                    {t('products.startingPrice')}
+                                </span>
                             )}
                         </>
+                    ) : (
+                        <span className="text-muted-foreground">—</span>
                     );
                 },
             },

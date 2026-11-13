@@ -288,9 +288,7 @@ function ProductDetailsFields({
                 <Switch
                     id="product-active"
                     checked={isActive}
-                    onCheckedChange={(checked) =>
-                        setValue('is_active', checked, { shouldValidate: true })
-                    }
+                    onCheckedChange={(checked) => setValue('is_active', checked)}
                 />
             </div>
         </div>
@@ -686,10 +684,9 @@ export function ProductEditForm({
         defaultValues: toDetailsValues(product),
     });
     const { handleSubmit, reset, setError } = form;
-
     useEffect(() => {
         reset(toDetailsValues(product));
-    }, [product, reset]);
+    }, [product.id, reset]);
 
     const submit = handleSubmit(async (values) => {
         if (isSubmitting) return;

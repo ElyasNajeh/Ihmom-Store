@@ -2,7 +2,7 @@ import { localizedText } from '@/shared/utils/localized.ts';
 
 export const STORE_NAME_EN = 'Ihmom Store';
 
-export const STORE_NAME_AR = 'هموم ستور';
+export const STORE_NAME_AR = 'الهموم ستور';
 
 export const STORE_ADDRESS_EN = 'Turmus Ayya – Main Street, next to Bravo Mall.';
 

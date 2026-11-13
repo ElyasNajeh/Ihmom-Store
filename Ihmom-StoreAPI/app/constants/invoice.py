@@ -8,7 +8,7 @@ INVOICE_FILENAME_TEMPLATE = "ihmom-store-invoice-{order_number}.pdf"
 
 INVOICE_STORE_NAME = {
     LANGUAGE_EN: "Ihmom Store",
-    LANGUAGE_AR: "هموم ستور",
+    LANGUAGE_AR: "الهموم ستور",
 }
 
 INVOICE_LABELS = {
@@ -60,7 +60,7 @@ INVOICE_LABELS = {
         "delivery_fee": "التوصيل",
         "total": "الإجمالي",
         "default_variant": "افتراضي",
-        "thanks": "شكراً لاختياركم هموم ستور",
+        "thanks": "شكراً لاختياركم الهموم ستور",
     },
 }
 

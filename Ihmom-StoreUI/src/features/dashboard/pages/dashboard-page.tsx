@@ -246,7 +246,7 @@ export default function AdminDashboardPage() {
                         />
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid auto-rows-fr items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <StatCard
                             label={t('dashboard.customers')}
                             value={data ? formatNumber(data.customers, locale) : '-'}
@@ -284,12 +284,14 @@ export default function AdminDashboardPage() {
                             value={data ? formatNumber(data.sliders, locale) : '-'}
                             icon={LayoutGrid}
                             isLoading={isPending}
+                            className="xl:col-start-2"
                         />
                         <StatCard
                             label={t('dashboard.admins')}
                             value={data ? formatNumber(data.admins, locale) : '-'}
                             icon={ShieldCheck}
                             isLoading={isPending}
+                            className="xl:col-start-3"
                         />
                     </div>
 

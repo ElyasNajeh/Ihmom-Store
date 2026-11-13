@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { ArrowRight, ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react';
+import { ArrowRight, ArrowUp, ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react';
 import { SiFacebook, SiInstagram, SiSnapchat } from 'react-icons/si';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/shared/components/brand/brand-mark.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import { getStoreAddress, getStoreName, storeInfo } from '@/features/storefront/constants/store.ts';
+import { scrollToSection } from '@/shared/utils/scroll.ts';
 
 const trustItems = [
     { id: 'securePayments', image: '/illustrations/secure-payments.svg' },
@@ -137,13 +138,17 @@ export function StoreFooter() {
                         {t('navigation:footer.rightsReserved')}
                     </p>
                     <div className="flex flex-wrap gap-x-5 gap-y-3">
-                        <Link
-                            to={aboutHref}
-                            className="hover:text-foreground inline-flex min-h-6 items-center gap-1"
+                        <a
+                            href="#top"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                scrollToSection('top');
+                            }}
+                            className="hover:text-foreground inline-flex min-h-6 items-center gap-1 transition-colors"
                         >
                             {t('navigation:footer.backToTop')}
-                            <ArrowUpRight className="size-3" aria-hidden="true" />
-                        </Link>
+                            <ArrowUp className="size-3" aria-hidden="true" />
+                        </a>
                     </div>
                 </div>
             </div>

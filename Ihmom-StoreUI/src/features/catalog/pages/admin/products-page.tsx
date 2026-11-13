@@ -259,7 +259,7 @@ export default function AdminProductsPage() {
                             )}
                         </>
                     ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">-</span>
                     );
                 },
             },

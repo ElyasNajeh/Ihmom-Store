@@ -1,13 +1,14 @@
 import type { ImgHTMLAttributes } from 'react';
 
 export type StorePhotoName =
-    | 'general_shop_opening_image'
     | 'accessories_section'
     | 'games_section'
     | 'shisha_vape_section'
     | 'combination_accessories_games_shisha_vape_section';
 
-const photos = import.meta.glob<string>('@/assets/store/*-{480,960,1440}.webp', {
+const widths = [480, 960] as const;
+
+const photos = import.meta.glob<string>('@/assets/store/*-{480,960}.webp', {
     eager: true,
     query: '?url',
     import: 'default',
@@ -30,8 +31,16 @@ export function StorePhoto({
     loading = 'lazy',
     fetchPriority = 'auto',
 }: StorePhotoProps) {
-    const source = (width: number) => photos[`/src/assets/store/${name}-${width}.webp`];
-    const widths = name === 'general_shop_opening_image' ? [480, 960, 1440] : [480, 960];
+    const source = (width: (typeof widths)[number]) => {
+        const path = `/src/assets/store/${name}-${width}.webp`;
+        const url = photos[path];
+
+        if (!url) {
+            throw new Error(`Missing store photo asset: ${path}`);
+        }
+
+        return url;
+    };
 
     return (
         <img
@@ -40,7 +49,7 @@ export function StorePhoto({
             sizes={sizes}
             alt={alt}
             width={960}
-            height={name === 'general_shop_opening_image' ? 720 : 1280}
+            height={1280}
             loading={loading}
             fetchPriority={fetchPriority}
             decoding="async"

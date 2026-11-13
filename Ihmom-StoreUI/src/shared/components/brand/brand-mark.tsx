@@ -1,4 +1,4 @@
-import brandIcon from '../../../../public/icon.png';
+import brandIcon from '/icon.png';
 import { cn } from '@/shared/lib/utils.ts';
 
 export function BrandMark({ className }: { className?: string }) {

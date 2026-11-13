@@ -7,20 +7,12 @@ import { BrandMark } from '@/shared/components/brand/brand-mark.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
 import { getStoreAddress, getStoreName, storeInfo } from '@/features/storefront/constants/store.ts';
 
-import {
-    SecurePaymentsIcon,
-    FastDeliveryIcon,
-    EasyReturnsIcon,
-    QualityGuaranteeIcon,
-} from '@/../public/illustrations/illustrations.tsx';
-
 const trustItems = [
-    { id: 'securePayments', Icon: SecurePaymentsIcon },
-    { id: 'fastDelivery', Icon: FastDeliveryIcon },
-    { id: 'easyReturns', Icon: EasyReturnsIcon },
-    { id: 'qualityGuarantee', Icon: QualityGuaranteeIcon },
+    { id: 'securePayments', image: '/illustrations/secure-payments.svg' },
+    { id: 'fastDelivery', image: '/illustrations/fast-delivery.svg' },
+    { id: 'easyReturns', image: '/illustrations/easy-returns.svg' },
+    { id: 'qualityGuarantee', image: '/illustrations/quality-guarantee.svg' },
 ] as const;
-
 export function StoreFooter() {
     const location = useLocation();
     const { t } = useTranslation(['navigation', 'common']);
@@ -47,9 +39,16 @@ export function StoreFooter() {
         <footer className="border-border bg-background border-t">
             <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
                 <div className="border-border/70 from-secondary/60 via-card to-brand/10 mb-9 grid grid-cols-2 gap-3 rounded-2xl border bg-linear-to-br px-4 py-4 sm:mb-10 sm:grid-cols-4 sm:gap-4 sm:px-5">
-                    {trustItems.map(({ id, Icon }) => (
+                    {trustItems.map(({ id, image }) => (
                         <div key={id} className="flex items-center gap-3">
-                            <Icon aria-hidden="true" className="size-9 shrink-0 sm:size-10" />
+                            <img
+                                src={image}
+                                alt=""
+                                aria-hidden="true"
+                                className="size-9 shrink-0 object-contain sm:size-10"
+                                loading="lazy"
+                                decoding="async"
+                            />
                             <span className="text-xs leading-5 font-medium sm:text-sm">
                                 {t(`navigation:footer.trust.${id}`)}
                             </span>

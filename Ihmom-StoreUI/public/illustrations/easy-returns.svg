@@ -1,0 +1,22 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 100 100"
+    fill="none"
+    stroke="#000"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+>
+    <path
+        d="M30 75 A 35 35 0 0 1 50 15 A 35 35 0 0 1 80 35"
+        stroke="#9FCA9C"
+        stroke-width="8"
+    />
+    <path d="M80 35 l-10 -5 M80 35 l-5 -10" stroke="#9FCA9C" stroke-width="6" />
+    <path d="M35 45 l15 -8 l15 8 v15 l-15 8 l-15 -8 z" fill="#E8D5B5" />
+    <path d="M50 37 v15 M35 45 l15 8 M65 45 l-15 8" />
+    <path d="M44 41 l6 3.5 v10 l-6 -3.5 z" fill="#D3BA95" />
+    <path d="M80 65 A 35 35 0 0 1 20 50" stroke="#9FCA9C" stroke-width="8" />
+    <path d="M15 30 q5 0 5 -5 q0 5 5 5 q-5 0 -5 5 q0 -5 -5 -5" fill="#E0A97E" />
+    <path d="M75 75 q5 0 5 -5 q0 5 5 5 q-5 0 -5 5 q0 -5 -5 -5" fill="#E0A97E" />
+</svg>

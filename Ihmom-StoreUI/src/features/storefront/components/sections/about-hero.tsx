@@ -82,13 +82,21 @@ export function AboutHero() {
                 <div className="relative">
                     <div className="bg-brand/20 absolute -end-5 -top-5 size-32 rounded-full blur-2xl" />
                     <div className="border-border bg-secondary relative overflow-hidden rounded-[2rem] border p-2 shadow-xl shadow-black/5">
-                        <StorePhoto
-                            name="general_shop_opening_image"
+                        <img
+                            src="/images/ihmom-store-preview-960.webp"
+                            srcSet="
+                                /images/ihmom-store-preview-480.webp 480w,
+                                /images/ihmom-store-preview-960.webp 960w,
+                                /images/ihmom-store-preview-1440.webp 1440w
+                            "
+                            sizes="(min-width: 1280px) 587px, (min-width: 1024px) calc(52.5vw - 85px), (min-width: 640px) calc(100vw - 66px), calc(100vw - 50px)"
                             alt={t('imageAlt')}
+                            width={960}
+                            height={640}
                             loading="eager"
                             fetchPriority="high"
-                            sizes="(min-width: 1280px) 587px, (min-width: 1024px) calc(52.5vw - 85px), (min-width: 640px) calc(100vw - 66px), calc(100vw - 50px)"
-                            className="aspect-4/3 h-auto w-full rounded-[1.5rem] object-contain"
+                            decoding="async"
+                            className="h-auto w-full rounded-[1.5rem] object-cover"
                         />
 
                         <div className="px-4 py-5 sm:px-5">

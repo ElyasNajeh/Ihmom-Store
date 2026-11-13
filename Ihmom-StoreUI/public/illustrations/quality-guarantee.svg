@@ -1,0 +1,20 @@
+<svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 100 100"
+        fill="none"
+        stroke="#000"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+>
+    <path d="M20 40 l25 -12 l25 12 v25 l-25 12 l-25 -12 z" fill="#E8D5B5" />
+    <path d="M45 28 v25 M20 40 l25 12 M70 40 l-25 12" />
+    <path d="M38 31 l8 4 v12 l-8 -4 z" fill="#D3BA95" />
+    <path
+    d="M70 45 c4 -4 10 -4 14 0 c4 4 4 10 0 14 c4 4 4 10 0 14 c-4 4 -10 4 -14 0 c-4 4 -10 4 -14 0 c-4 -4 -4 -10 0 -14 c-4 -4 -4 -10 0 -14 c4 -4 10 -4 14 0 z"
+    fill="#9FCA9C"
+    />
+    <path d="M60 60 l5 5 l10 -12" stroke="#fff" stroke-width="4" />
+    <path d="M15 20 q5 0 5 -5 q0 5 5 5 q-5 0 -5 5 q0 -5 -5 -5" fill="#E0A97E" />
+    <path d="M85 25 q4 0 4 -4 q0 4 4 4 q-4 0 -4 4 q0 -4 -4 -4" fill="#E0A97E" />
+</svg>

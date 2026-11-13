@@ -1,8 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { Spinner } from '@/shared/components/app/spinner.tsx';
 import { useAdminAuth } from '@/features/auth/context/admin-auth-context.ts';
+import { Spinner } from '@/shared/components/ui/spinner.tsx';
+
 
 function SessionLoader() {
     const { t } = useTranslation('common');
@@ -13,11 +14,12 @@ function SessionLoader() {
             role="status"
             aria-live="polite"
         >
-            <Spinner size={24} color="currentColor" className="text-muted-foreground" />
+            <Spinner aria-hidden="true" className="size-6" />
             <p className="text-muted-foreground text-sm">{t('auth.checkingSession')}</p>
         </div>
     );
 }
+
 
 export function RequireAdmin() {
     const { status } = useAdminAuth();

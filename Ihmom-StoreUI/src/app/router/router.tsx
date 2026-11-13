@@ -5,11 +5,16 @@ import { RedirectIfAuthenticated, RequireAdmin } from '@/app/router/guards.tsx';
 import { AdminLayout } from '@/app/layouts/admin-layout.tsx';
 import { StoreLayout } from '@/app/layouts/store-layout.tsx';
 import { RouteErrorPage } from '@/app/errors/route-error-page.tsx';
-import { Spinner } from '@/shared/components/app/spinner.tsx';
+import { Spinner } from '@/shared/components/ui/spinner.tsx';
 
 const routeFallback = (
-    <div className="flex min-h-dvh items-center justify-center">
-        <Spinner />
+    <div
+        className="bg-background flex min-h-dvh items-center justify-center"
+        role="status"
+        aria-live="polite"
+    >
+        <Spinner aria-hidden="true" className="size-6" />
+        <span className="sr-only">Loading...</span>
     </div>
 );
 

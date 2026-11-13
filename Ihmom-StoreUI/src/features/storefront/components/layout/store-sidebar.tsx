@@ -6,10 +6,9 @@ import {
     Info,
     Mail,
     MessageCircle,
+    Package,
     RotateCcw,
-    Search,
     ShoppingBag,
-    ShoppingCart,
     Truck,
     X,
 } from 'lucide-react';
@@ -50,7 +49,7 @@ export function StoreSidebar({ side }: { side: 'left' | 'right' }) {
 
     const browseLinks = [
         { id: 'home', label: t('navigation:header.home'), to: '/', icon: Home },
-        { id: 'shop', label: t('navigation:header.shop'), to: '/shop', icon: Search },
+        { id: 'shop', label: t('navigation:header.shop'), to: '/shop', icon: Package },
         {
             id: 'myOrders',
             label: t('navigation:header.myOrders'),
@@ -196,28 +195,10 @@ export function StoreSidebar({ side }: { side: 'left' | 'right' }) {
             </SidebarContent>
 
             <SidebarFooter className="border-sidebar-border border-t">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            isActive={pathname === '/cart'}
-                            render={<Link to="/cart" onClick={close} />}
-                        >
-                            <ShoppingCart aria-hidden="true" />
-                            <span>{t('navigation:header.cart')}</span>
-                        </SidebarMenuButton>
-
-                        {itemCount > 0 ? (
-                            <SidebarMenuBadge>{formatCartBadgeCount(itemCount)}</SidebarMenuBadge>
-                        ) : null}
-                    </SidebarMenuItem>
-                </SidebarMenu>
-
                 <div className="flex items-center justify-between gap-3 px-1 pt-1">
                     <LanguageSelector />
                     <ThemeToggle />
                 </div>
-
                 <p className="text-muted-foreground px-1 pt-1 text-[11px] leading-4">
                     {t('common:store.tagline')}
                 </p>

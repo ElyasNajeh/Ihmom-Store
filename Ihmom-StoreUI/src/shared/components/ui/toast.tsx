@@ -12,7 +12,11 @@ import {
     Loader2Icon,
 } from 'lucide-react';
 
-const toast = ToastPrimitive.createToastManager();
+interface CustomToastData {
+    onClick?: () => void;
+}
+
+const toast = ToastPrimitive.createToastManager<CustomToastData>();
 
 function ToastProvider({ ...props }: ToastPrimitive.Provider.Props) {
     return <ToastPrimitive.Provider {...props} />;
@@ -170,11 +174,17 @@ function ToastIcon({ type }: { type: string | undefined }) {
 }
 
 function ToastList() {
-    const { toasts } = ToastPrimitive.useToastManager();
+    const { toasts } = ToastPrimitive.useToastManager<CustomToastData>();
 
     return toasts.map((toastItem) => (
         <Toast key={toastItem.id} toast={toastItem}>
-            <ToastContent>
+            <ToastContent
+                className={cn(
+                    'flex h-full items-center',
+                    toastItem.data?.onClick && 'hover:bg-accent/50 cursor-pointer',
+                )}
+                onClick={toastItem.data?.onClick}
+            >
                 <ToastIcon type={toastItem.type} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <ToastTitle />
@@ -186,7 +196,6 @@ function ToastList() {
         </Toast>
     ));
 }
-
 function Toaster({ children, toastManager = toast, ...props }: ToastPrimitive.Provider.Props) {
     return (
         <ToastProvider toastManager={toastManager} {...props}>

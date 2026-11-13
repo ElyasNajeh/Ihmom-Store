@@ -172,6 +172,23 @@ export function StoreNavbar() {
 
                     <div className="flex items-center gap-2 md:hidden">
                         <Button
+                            variant="ghost"
+                            size="icon"
+                            className="relative size-10 shrink-0"
+                            asChild
+                        >
+                            <Link to="/cart" aria-label={t('navigation:header.cart')}>
+                                <ShoppingBag className="size-5" aria-hidden="true" />
+
+                                {itemCount > 0 && (
+                                    <span className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 grid size-5 place-items-center rounded-full text-[10px] font-semibold tabular-nums">
+                                        {formatCartBadgeCount(itemCount)}
+                                    </span>
+                                )}
+                            </Link>
+                        </Button>
+
+                        <Button
                             variant="outline"
                             size="icon"
                             className="size-10 shrink-0"

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import {
@@ -121,7 +121,7 @@ export default function ProductDetailPage() {
     const description = product
         ? localizedText(product.description_en, product.description_ar, isArabic) || null
         : null;
-
+    const navigate = useNavigate();
     const handleAddToCart = () => {
         if (!product || !selectedVariant) {
             return;
@@ -140,11 +140,13 @@ export default function ProductDetailPage() {
             },
             quantity,
         );
-
         toastManager.add({
             type: 'success',
             title: t('product.added'),
             description: productName,
+            data: {
+                onClick: () => navigate('/cart'),
+            },
         });
     };
 

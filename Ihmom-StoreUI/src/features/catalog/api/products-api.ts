@@ -5,6 +5,7 @@ import type {
     ProductImage,
     ProductVariant,
     PublicProduct,
+    PublicRandomizationOptions,
     QueryAdminProduct,
     QueryProduct,
     UpdateProduct,
@@ -54,9 +55,10 @@ export async function fetchAdminProduct(productId: number): Promise<Product> {
 export async function fetchProductRecommendations(
     productId: number,
     limit: number,
+    options: PublicRandomizationOptions = {},
 ): Promise<PublicProduct[]> {
     const response = await api.get<PublicProduct[]>(`/products/${productId}/recommendations`, {
-        params: { limit },
+        params: { limit, ...options },
     });
 
     return response.data;

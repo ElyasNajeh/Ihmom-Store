@@ -11,7 +11,7 @@ import { AdminListToolbar } from '@/shared/components/admin/admin-list-toolbar.t
 import { AdminRowActions } from '@/shared/components/admin/admin-row-actions.tsx';
 import { ConfirmDialog } from '@/shared/components/admin/confirm-dialog.tsx';
 import { AdminFormDialog } from '@/shared/components/admin/admin-form-dialog.tsx';
-import type { ColumnDef } from '@/shared/components/data/views/table-view.tsx';
+import type { AdminColumnDef as ColumnDef } from '@/shared/components/admin/admin-table.tsx';
 import { useAdmins, useCreateAdmin, useDeleteAdmin } from '@/features/admins/hooks/useAdmins.ts';
 import { useAdminAuth } from '@/features/auth/context/admin-auth-context.ts';
 import { useAdminToast } from '@/shared/hooks/use-admin-toast.ts';
@@ -118,6 +118,7 @@ export default function AdminAdminsPage() {
             },
             {
                 id: 'actions',
+                mobileRole: 'actions',
                 header: t('common.actions'),
                 className: 'w-16 text-end',
                 cell: (admin) => (

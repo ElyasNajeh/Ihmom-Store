@@ -15,7 +15,7 @@ import {
     type TaxonomyFormValues,
 } from '@/features/catalog/components/admin/taxonomy-form-dialog.tsx';
 import { ActiveBadge } from '@/shared/components/admin/status-badges.tsx';
-import type { ColumnDef } from '@/shared/components/data/views/table-view.tsx';
+import type { AdminColumnDef as ColumnDef } from '@/shared/components/admin/admin-table.tsx';
 import {
     useAdminBrands,
     useCreateBrand,
@@ -149,6 +149,7 @@ export default function AdminBrandsPage() {
             },
             {
                 id: 'actions',
+                mobileRole: 'actions',
                 header: t('common.actions'),
                 className: 'w-24 text-end',
                 cell: (brand) => (

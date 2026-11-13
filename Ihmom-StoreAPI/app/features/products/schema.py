@@ -102,6 +102,25 @@ class ProductQuery(QueryBase):
 
         return value
 
+
+class ProductRandomizationQuery(BaseModel):
+    randomize: bool = False
+    random_seed: Annotated[
+        str | None,
+        StringConstraints(strip_whitespace=False, pattern=r"^[0-9a-f]{32}$"),
+    ] = None
+
+    @model_validator(mode="after")
+    def require_random_seed(self) -> 'ProductRandomizationQuery':
+        if self.randomize and self.random_seed is None:
+            raise ValueError("random_seed is required when randomize is enabled")
+        return self
+
+
+class PublicProductQuery(ProductQuery, ProductRandomizationQuery):
+    pass
+
+
 class ProductVariantBase(BaseModel):
     name_ar: str = Field(
         min_length=1,

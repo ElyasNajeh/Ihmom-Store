@@ -21,7 +21,7 @@ import { AdminPagination } from '@/shared/components/admin/admin-pagination.tsx'
 import { AdminSearchInput } from '@/shared/components/admin/admin-search-input.tsx';
 import { AdminSortSelect } from '@/shared/components/admin/admin-sort-select.tsx';
 import { OrderStatusBadge } from '@/shared/components/admin/status-badges.tsx';
-import type { ColumnDef } from '@/shared/components/data/views/table-view.tsx';
+import type { AdminColumnDef as ColumnDef } from '@/shared/components/admin/admin-table.tsx';
 import { useAdminOrders, useOrderInvoice } from '@/features/orders/hooks/useOrders.ts';
 import { useAdminDeliveryAreas } from '@/features/delivery/hooks/useDeliveryAreas.ts';
 import { useDebounce } from '@/shared/hooks/useDebounce.ts';
@@ -270,6 +270,7 @@ export default function AdminOrdersPage() {
             },
             {
                 id: 'actions',
+                mobileRole: 'actions',
                 header: t('common.actions'),
                 className: 'w-24 text-end',
                 cell: (order) => (
@@ -394,7 +395,7 @@ export default function AdminOrdersPage() {
                                     emptyMessage={t('orders.noAreasFound')}
                                     openLabel={t('orders.deliveryArea')}
                                     clearable={false}
-                                    className="w-44"
+                                    className="w-56"
                                     inputClassName="h-9"
                                 />
 

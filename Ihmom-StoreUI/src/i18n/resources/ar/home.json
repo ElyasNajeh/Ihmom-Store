@@ -22,8 +22,8 @@
         "error": "المنتجات غير متاحة مؤقتًا. انتقل إلى المتجر وحاول مرة أخرى.",
         "empty": "لا توجد منتجات لعرضها هنا حاليًا."
     },
-    "latestProducts": {
-        "sectionLabel": "أحدث المنتجات"
+    "discoverProducts": {
+        "sectionLabel": "اكتشف المنتجات"
     },
     "aboutCta": {
         "eyebrow": "تعرّف على هموم ستور",

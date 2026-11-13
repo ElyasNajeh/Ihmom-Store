@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { catalogNumericSeed } from '@/features/catalog/utils/catalog-seed.ts';
+import { shuffleArray } from '@/shared/utils/random.ts';
 import { useCategories } from '@/features/catalog/hooks/useCategories';
 import { useProducts } from '@/features/catalog/hooks/useProducts';
 import { AboutHero } from '@/features/storefront/components/sections/about-hero';
@@ -12,10 +15,7 @@ import {
     CATEGORY_SHOWCASE_LIMIT,
     CATEGORY_SORT_FIELD,
 } from '@/features/catalog/constants/categories.ts';
-import {
-    PRODUCT_RECOMMENDATIONS_LIMIT,
-    PRODUCT_SORT_FIELD,
-} from '@/features/catalog/constants/products.ts';
+import { PRODUCT_RECOMMENDATIONS_LIMIT } from '@/features/catalog/constants/products.ts';
 import { DEFAULT_PAGE, SORT_DIRECTION } from '@/shared/constants/query.ts';
 
 /** Public-facing About + Contact landing page. */
@@ -25,8 +25,7 @@ export default function AboutContactPage() {
     const productsQuery = useProducts({
         page: DEFAULT_PAGE,
         page_size: PRODUCT_RECOMMENDATIONS_LIMIT,
-        sort_by: PRODUCT_SORT_FIELD.CREATED_AT,
-        order: SORT_DIRECTION.DESC,
+        randomize: true,
     });
 
     const categoriesQuery = useCategories({
@@ -35,6 +34,12 @@ export default function AboutContactPage() {
         sort_by: CATEGORY_SORT_FIELD.CREATED_AT,
         order: SORT_DIRECTION.DESC,
     });
+
+    const categorySeed = catalogNumericSeed();
+    const categories = useMemo(
+        () => shuffleArray(categoriesQuery.data?.items ?? [], categorySeed),
+        [categoriesQuery.data?.items, categorySeed],
+    );
 
     return (
         <main>
@@ -61,7 +66,7 @@ export default function AboutContactPage() {
             </Reveal>
             <Reveal>
                 <CategoryShowcase
-                    categories={categoriesQuery.data?.items ?? []}
+                    categories={categories}
                     isLoading={categoriesQuery.isPending}
                     isError={categoriesQuery.isError}
                 />

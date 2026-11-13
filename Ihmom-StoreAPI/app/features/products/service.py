@@ -2,7 +2,7 @@
 from decimal import Decimal
 
 from fastapi import HTTPException, UploadFile
-from sqlalchemy import and_, exists, func, select
+from sqlalchemy import Text, and_, cast, exists, func, literal, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -13,6 +13,7 @@ from app.features.products.model import Product, ProductImage, ProductVariant
 from app.features.products.schema import (
     ProductCreate,
     ProductQuery,
+    PublicProductQuery,
     ProductUpdate,
     ProductVariantCreate,
     ProductVariantUpdate,
@@ -247,6 +248,13 @@ def _product_order_by(
     )
 
 
+def _random_product_order_by(seed: str):
+    return (
+        func.md5(literal(seed) + literal(":") + cast(Product.id, Text)).asc(),
+        Product.id.asc(),
+    )
+
+
 def get_products_shared(
     db: Session,
     query_data: ProductQuery,
@@ -321,10 +329,14 @@ def get_products_shared(
         query,
         query_data.page,
         query_data.page_size,
-        order_by=_product_order_by(
-            query_data.sort_by,
-            query_data.order,
-            is_admin=False,
+        order_by=(
+            _random_product_order_by(query_data.random_seed)
+            if isinstance(query_data, PublicProductQuery) and query_data.randomize
+            else _product_order_by(
+                query_data.sort_by,
+                query_data.order,
+                is_admin=False,
+            )
         ),
     )
 
@@ -430,7 +442,14 @@ def get_products_by_ids(db: Session, product_ids: list[int]):
     return [_public_product(product) for product in products]
 
 
-def get_product_recommendations(db: Session, product_id: int, limit: int):
+def get_product_recommendations(
+    db: Session,
+    product_id: int,
+    limit: int,
+    *,
+    randomize: bool = False,
+    random_seed: str | None = None,
+):
     selected_product = (
         _public_visibility_query(db)
         .filter(Product.id == product_id)
@@ -444,8 +463,11 @@ def get_product_recommendations(db: Session, product_id: int, limit: int):
         .filter(Product.id != product_id)
         .order_by(
             (Product.category_id == selected_product.category_id).desc(),
-            Product.created_at.desc(),
-            Product.id.desc(),
+            *(
+                _random_product_order_by(random_seed)
+                if randomize
+                else (Product.created_at.desc(), Product.id.desc())
+            ),
         )
         .limit(limit)
         .all()

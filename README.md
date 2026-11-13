@@ -36,6 +36,8 @@ Run npm commands from that directory. There is no root npm package.
 Catalog data is managed through the admin dashboard; seed utilities have been
 retired. Removing those utilities does not modify existing catalog records.
 
+See [persistent catalogue randomization](CATALOG_RANDOMIZATION.md) for storefront discovery ordering, browser seed persistence, category scope, and performance constraints.
+
 ## Development
 
 Create the root configuration only if it does not already exist:

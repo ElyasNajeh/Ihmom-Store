@@ -20,7 +20,7 @@ import { AdminRowActions } from '@/shared/components/admin/admin-row-actions.tsx
 import { BilingualNameCell } from '@/shared/components/admin/bilingual-name-cell.tsx';
 import { ActiveBadge } from '@/shared/components/admin/status-badges.tsx';
 import { ConfirmDialog } from '@/shared/components/admin/confirm-dialog.tsx';
-import type { ColumnDef } from '@/shared/components/data/views/table-view.tsx';
+import type { AdminColumnDef as ColumnDef } from '@/shared/components/admin/admin-table.tsx';
 import { useAdminProducts, useDeleteProduct } from '@/features/catalog/hooks/useProducts.ts';
 import { useAdminCategories } from '@/features/catalog/hooks/useCategories.ts';
 import { useAdminBrands } from '@/features/catalog/hooks/useBrands.ts';
@@ -180,6 +180,7 @@ export default function AdminProductsPage() {
         () => [
             {
                 id: 'image',
+                mobileRole: 'image',
                 header: t('fields.image'),
                 className: 'w-16',
                 cell: (product) => {
@@ -292,6 +293,7 @@ export default function AdminProductsPage() {
             },
             {
                 id: 'actions',
+                mobileRole: 'actions',
                 header: t('common.actions'),
                 className: 'w-28 text-end',
                 cell: (product) => (

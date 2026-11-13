@@ -23,6 +23,8 @@ from app.features.products.schema import (
     ProductImageResponse,
     ProductListResponse,
     ProductQuery,
+    ProductRandomizationQuery,
+    PublicProductQuery,
     ProductResponse,
     ProductUpdate,
     ProductVariantCreate,
@@ -39,8 +41,7 @@ router = APIRouter(prefix="/products", tags=["Products"])
 ProductId = Annotated[int, Field(ge=1)]
 
 
-def validate_product_query(
-    request: Request,
+def _product_query_values(
     page: int = Query(1, ge=1, le=1000),
     page_size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None, min_length=1, max_length=200),
@@ -60,11 +61,9 @@ def validate_product_query(
     sort_by: ProductSortBy | None = Query(None),
     order: SortDirection | None = Query(None),
     ids: list[int] | None = Query(None, min_length=1, max_length=100),
-) -> ProductQuery:
-    return parse_query(
-        request,
-        ProductQuery,
-        values={
+) -> dict:
+    return {
+        "values": {
             "page": page,
             "page_size": page_size,
             "search": search,
@@ -72,13 +71,21 @@ def validate_product_query(
             "order": order,
             "ids": ids,
         },
-        filters={
+        "filters": {
             "category_id": category_id,
             "brand_id": brand_id,
             "is_active": is_active,
             "min_price": min_price,
             "max_price": max_price,
         },
+    }
+
+
+def _parse_product_query(request: Request, model: type[ProductQuery], values: dict):
+    return parse_query(
+        request,
+        model,
+        **values,
         rules=QueryRules.create(
             declared={
                 "page",
@@ -92,7 +99,7 @@ def validate_product_query(
                 "sort_by",
                 "order",
                 "ids",
-            },
+            } | values["values"].keys(),
             filter_fields={
                 "category_id",
                 "brand_id",
@@ -105,13 +112,45 @@ def validate_product_query(
     )
 
 
+def validate_product_query(
+    request: Request,
+    values: Annotated[dict, Depends(_product_query_values)],
+) -> ProductQuery:
+    return _parse_product_query(request, ProductQuery, values)
+
+
+def validate_public_product_query(
+    request: Request,
+    values: Annotated[dict, Depends(_product_query_values)],
+    randomize: bool = Query(False),
+    random_seed: str | None = Query(None),
+) -> PublicProductQuery:
+    return _parse_product_query(request, PublicProductQuery, {
+        **values,
+        "values": {**values["values"], "randomize": randomize, "random_seed": random_seed},
+    })
+
+
+def validate_recommendation_randomization(
+    request: Request,
+    randomize: bool = Query(False),
+    random_seed: str | None = Query(None),
+) -> ProductRandomizationQuery:
+    return parse_query(
+        request,
+        ProductRandomizationQuery,
+        values={"randomize": randomize, "random_seed": random_seed},
+        rules=QueryRules.create(declared={"limit", "randomize", "random_seed"}),
+    )
+
+
 @router.get(
     "/",
     response_model=PublicProductListResponse,
     response_model_exclude_none=True,
 )
 def get_products(
-    query: Annotated[ProductQuery, Depends(validate_product_query)],
+    query: Annotated[PublicProductQuery, Depends(validate_public_product_query)],
     db: Session = Depends(get_db),
 ):
     return service.get_products_shared(db, query, is_admin=False)
@@ -163,10 +202,17 @@ def create_product(
 )
 def get_product_recommendations(
     product_id: Annotated[int, Path(ge=1)],
+    randomization: Annotated[
+        ProductRandomizationQuery, Depends(validate_recommendation_randomization)
+    ],
     limit: int = Query(4, ge=1, le=20),
     db: Session = Depends(get_db),
 ):
-    return service.get_product_recommendations(db, product_id, limit)
+    return service.get_product_recommendations(
+        db, product_id, limit,
+        randomize=randomization.randomize,
+        random_seed=randomization.random_seed,
+    )
 
 
 @router.get(

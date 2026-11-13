@@ -22,8 +22,8 @@
         "error": "These products are temporarily unavailable. Visit the shop to try again.",
         "empty": "There are no products to feature here yet."
     },
-    "latestProducts": {
-        "sectionLabel": "Latest products"
+    "discoverProducts": {
+        "sectionLabel": "Discover products"
     },
     "aboutCta": {
         "eyebrow": "Get to know Ihmom",

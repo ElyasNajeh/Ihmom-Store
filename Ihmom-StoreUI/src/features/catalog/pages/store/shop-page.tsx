@@ -136,7 +136,9 @@ export default function ShopPage() {
             page,
             page_size: DEFAULT_PAGE_SIZE,
             search: debouncedSearch || undefined,
-            ...resolveSortParams(sort, PRODUCT_STOREFRONT_SORT_PARAMS),
+            ...(sort === 'discover'
+                ? { randomize: true }
+                : { randomize: false, ...resolveSortParams(sort, PRODUCT_STOREFRONT_SORT_PARAMS) }),
             filter: Object.keys(filter).length ? filter : undefined,
         } as QueryProduct;
     }, [page, debouncedSearch, categoryId, brandId, debouncedMinPrice, debouncedMaxPrice, sort]);

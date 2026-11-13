@@ -16,6 +16,7 @@
         },
         "sort": {
             "label": "Sort by",
+            "discover": "Discover",
             "newest": "Newest",
             "oldest": "Oldest",
             "nameAr": "Arabic name",

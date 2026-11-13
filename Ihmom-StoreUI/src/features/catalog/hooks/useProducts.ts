@@ -1,4 +1,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    resolvePublicRandomization,
+    sameRandomization,
+} from '@/features/catalog/utils/catalog-seed.ts';
 
 import {
     createProduct,
@@ -23,6 +27,7 @@ import type {
     ProductImage,
     QueryAdminProduct,
     QueryProduct,
+    PublicRandomizationOptions,
     UpdateProduct,
     UpdateProductVariant,
 } from '@/features/catalog/types/product.ts';
@@ -42,8 +47,10 @@ import {
 
 export function useProducts(params: QueryProduct = {}) {
     // Admins browsing the storefront share this route; keep the public view active-only.
+    const { randomize, random_seed, ...rest } = params;
     const queryParams = withDefaultQuery({
-        ...params,
+        ...rest,
+        ...resolvePublicRandomization({ randomize, random_seed }),
         filter: { ...params.filter, is_active: true },
     });
 
@@ -52,7 +59,11 @@ export function useProducts(params: QueryProduct = {}) {
         // Catalogue data changes far less often than cart/checkout state.
         staleTime: 5 * 60_000,
         gcTime: 10 * 60_000,
-        placeholderData: keepPreviousData,
+        placeholderData: (previousData, previousQuery) =>
+            previousQuery?.queryKey[1] === 'public' &&
+            sameRandomization(previousQuery.queryKey[2] as QueryProduct, queryParams)
+                ? keepPreviousData(previousData)
+                : undefined,
         queryFn: () => fetchProducts(queryParams),
     });
 }
@@ -82,11 +93,16 @@ export function useAdminProduct(productId: number, enabled = true) {
     });
 }
 
-export function useProductRecommendations(productId: number, limit = 4) {
+export function useProductRecommendations(
+    productId: number,
+    limit = 4,
+    options: PublicRandomizationOptions = {},
+) {
+    const queryParams = resolvePublicRandomization(options);
     return useQuery({
-        queryKey: [PRODUCT, productId, 'recommendations', limit],
+        queryKey: [PRODUCT, 'public', productId, 'recommendations', limit, queryParams],
         enabled: Number.isInteger(productId) && productId > 0,
-        queryFn: () => fetchProductRecommendations(productId, limit),
+        queryFn: () => fetchProductRecommendations(productId, limit, queryParams),
     });
 }
 

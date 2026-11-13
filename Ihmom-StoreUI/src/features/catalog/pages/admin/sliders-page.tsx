@@ -15,7 +15,7 @@ import {
     type SliderFormValues,
 } from '@/features/catalog/components/admin/slider-form-dialog.tsx';
 import { ActiveBadge } from '@/shared/components/admin/status-badges.tsx';
-import type { ColumnDef } from '@/shared/components/data/views/table-view.tsx';
+import type { AdminColumnDef as ColumnDef } from '@/shared/components/admin/admin-table.tsx';
 import {
     useCreateSlider,
     useDeleteSlider,
@@ -133,6 +133,7 @@ export default function AdminSlidersPage() {
         () => [
             {
                 id: 'image',
+                mobileRole: 'image',
                 header: t('fields.image'),
                 className: 'w-28',
                 cell: (slider) => {
@@ -186,6 +187,7 @@ export default function AdminSlidersPage() {
             },
             {
                 id: 'actions',
+                mobileRole: 'actions',
                 header: t('common.actions'),
                 className: 'w-24 text-end',
                 cell: (slider) => (

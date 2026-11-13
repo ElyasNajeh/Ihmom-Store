@@ -132,9 +132,13 @@ export function LimitedOffers({ products, isLoading, isError }: LimitedOffersPro
                                         <h3 className="mt-2 line-clamp-2 min-h-10 text-sm leading-5 font-semibold">
                                             {name}
                                         </h3>
-                                        <p className="mt-3 text-sm font-semibold">
-                                            {formatPrice(product.starting_price, locale)}
-                                            <span className="text-muted-foreground ms-1 text-xs font-normal">
+                                        <p
+                                            dir={isArabic ? 'rtl' : 'ltr'}
+                                            className="mt-3 flex items-center gap-1 text-sm font-semibold">
+                                            <span>
+                                                {formatPrice(product.starting_price, locale)}
+                                            </span>
+                                            <span className="text-muted-foreground text-xs font-normal">
                                                 {t('priceNote')}
                                             </span>
                                         </p>

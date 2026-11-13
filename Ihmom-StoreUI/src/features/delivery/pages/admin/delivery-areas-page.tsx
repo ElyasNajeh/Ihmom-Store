@@ -15,7 +15,7 @@ import {
     type DeliveryAreaFormValues,
 } from '@/features/delivery/components/admin/delivery-area-form-dialog.tsx';
 import { ActiveBadge } from '@/shared/components/admin/status-badges.tsx';
-import type { ColumnDef } from '@/shared/components/data/views/table-view.tsx';
+import type { AdminColumnDef as ColumnDef } from '@/shared/components/admin/admin-table.tsx';
 import {
     useAdminDeliveryAreas,
     useCreateDeliveryArea,
@@ -152,6 +152,7 @@ export default function AdminDeliveryAreasPage() {
             },
             {
                 id: 'actions',
+                mobileRole: 'actions',
                 header: t('common.actions'),
                 className: 'w-24 text-end',
                 cell: (area) => (

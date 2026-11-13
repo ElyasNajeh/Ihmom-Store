@@ -6,6 +6,8 @@ import {
     type SortParams,
 } from '@/shared/constants/query.ts';
 
+export const CATALOG_SEED_STORAGE_KEY = 'ihmom-catalog-seed-v1';
+
 export const DEFAULT_VARIANT_NAME = '__default__';
 
 export const PRODUCT_NAME_MAX_LENGTH = 200;
@@ -105,6 +107,7 @@ export function productSortParams(
 }
 
 export const PRODUCT_STOREFRONT_SORT = {
+    DISCOVER: 'discover',
     NEWEST: 'newest',
     OLDEST: 'oldest',
     NAME_AR: 'name_ar',
@@ -117,6 +120,7 @@ export type ProductStorefrontSort =
     (typeof PRODUCT_STOREFRONT_SORT)[keyof typeof PRODUCT_STOREFRONT_SORT];
 
 export const PRODUCT_STOREFRONT_SORT_OPTIONS = [
+    { value: PRODUCT_STOREFRONT_SORT.DISCOVER, labelKey: 'shop.sort.discover' },
     { value: PRODUCT_STOREFRONT_SORT.NEWEST, labelKey: 'shop.sort.newest' },
     { value: PRODUCT_STOREFRONT_SORT.OLDEST, labelKey: 'shop.sort.oldest' },
     { value: PRODUCT_STOREFRONT_SORT.NAME_AR, labelKey: 'shop.sort.nameAr' },
@@ -126,10 +130,10 @@ export const PRODUCT_STOREFRONT_SORT_OPTIONS = [
 ] as const satisfies readonly { value: ProductStorefrontSort; labelKey: string }[];
 
 export const PRODUCT_STOREFRONT_DEFAULT_SORT: ProductStorefrontSort =
-    PRODUCT_STOREFRONT_SORT.NEWEST;
+    PRODUCT_STOREFRONT_SORT.DISCOVER;
 
 export const PRODUCT_STOREFRONT_SORT_PARAMS: Record<
-    ProductStorefrontSort,
+    Exclude<ProductStorefrontSort, 'discover'>,
     SortParams<ProductSortField>
 > = {
     [PRODUCT_STOREFRONT_SORT.NEWEST]: {

@@ -106,7 +106,13 @@ export interface FilterProduct {
     max_price?: number | string;
 }
 
-export interface QueryProduct extends Query {
+export interface PublicRandomizationOptions {
+    randomize?: boolean;
+    /** Exactly 32 hexadecimal characters; validated before public requests. */
+    random_seed?: string;
+}
+
+export interface QueryProduct extends Query, PublicRandomizationOptions {
     filter?: FilterProduct;
     sort_by?: ProductSortBy;
     ids?: number[];

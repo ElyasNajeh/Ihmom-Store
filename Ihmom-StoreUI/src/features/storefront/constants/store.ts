@@ -9,8 +9,8 @@ export const STORE_ADDRESS_EN = 'Turmus Ayya – Main Street, next to Bravo Mall
 export const STORE_ADDRESS_AR = 'ترمسعيا – الشارع الرئيسي، بجانب براڤو مول.';
 
 export const STORE_COORDINATES = {
-    LATITUDE: 32.033728,
-    LONGITUDE: 35.28707,
+    LATITUDE: 32.033701,
+    LONGITUDE: 35.287226,
 } as const;
 
 export const STORE_MAP_QUERY = `${STORE_COORDINATES.LATITUDE},${STORE_COORDINATES.LONGITUDE}`;

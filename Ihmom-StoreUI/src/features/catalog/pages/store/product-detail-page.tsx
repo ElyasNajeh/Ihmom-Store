@@ -40,7 +40,9 @@ export default function ProductDetailPage() {
     const productId = Number(productIdParam);
     const isValidId = Number.isInteger(productId) && productId > 0;
     const productQuery = useProduct(isValidId ? productId : 0);
-    const recommendationsQuery = useProductRecommendations(isValidId ? productId : 0, 4);
+    const recommendationsQuery = useProductRecommendations(isValidId ? productId : 0, 4, {
+        randomize: true,
+    });
 
     const [selection, setSelection] = useState<{
         productId: number | null;

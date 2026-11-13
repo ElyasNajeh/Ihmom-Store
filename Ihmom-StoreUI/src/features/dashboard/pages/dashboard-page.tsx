@@ -7,10 +7,11 @@ import {
     LayoutGrid,
     Package,
     RefreshCw,
+    ShieldCheck,
     ShoppingCart,
     Tags,
     Truck,
-    Users,
+    UserRound,
 } from 'lucide-react';
 
 import { Button } from '@/shared/components/ui/button.tsx';
@@ -249,7 +250,7 @@ export default function AdminDashboardPage() {
                         <StatCard
                             label={t('dashboard.customers')}
                             value={data ? formatNumber(data.customers, locale) : '-'}
-                            icon={Users}
+                            icon={UserRound}
                             isLoading={isPending}
                         />
                         <StatCard
@@ -275,14 +276,24 @@ export default function AdminDashboardPage() {
                         <StatCard
                             label={t('dashboard.brands')}
                             value={data ? formatNumber(data.brands, locale) : '-'}
-                            hint={
-                                data
-                                    ? `${t('dashboard.sliders')}: ${data.sliders} · ${t('dashboard.admins')}: ${data.admins}`
-                                    : undefined
-                            }
                             icon={BadgeCheck}
                             isLoading={isPending}
                         />
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <StatCard
+                                label={t('dashboard.sliders')}
+                                value={data ? formatNumber(data.sliders, locale) : '-'}
+                                icon={LayoutGrid}
+                                isLoading={isPending}
+                            />
+
+                            <StatCard
+                                label={t('dashboard.admins')}
+                                value={data ? formatNumber(data.admins, locale) : '-'}
+                                icon={ShieldCheck}
+                                isLoading={isPending}
+                            />
+                        </div>
                     </div>
 
                     {data ? (

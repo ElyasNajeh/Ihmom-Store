@@ -13,7 +13,7 @@ import {
     CustomerFormDialog,
     type CustomerFormValues,
 } from '@/features/customers/components/customer-form-dialog.tsx';
-import type { ColumnDef } from '@/shared/components/data/views/table-view.tsx';
+import type { AdminColumnDef as ColumnDef } from '@/shared/components/admin/admin-table.tsx';
 import {
     useCreateCustomer,
     useCustomers,
@@ -133,6 +133,7 @@ export default function AdminCustomersPage() {
             },
             {
                 id: 'actions',
+                mobileRole: 'actions',
                 header: t('common.actions'),
                 className: 'w-24 text-end',
                 cell: (customer) => (

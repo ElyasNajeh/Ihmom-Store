@@ -60,13 +60,14 @@ export function AdminPagination({
                         >
                             <SelectTrigger
                                 size="sm"
+                                className="w-16 text-xs"
                                 aria-label={t('common.resultsCount', { count: total })}
                             >
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                                 {PAGE_SIZE_OPTIONS.map((size) => (
-                                    <SelectItem key={size} value={String(size)}>
+                                    <SelectItem key={size} value={String(size)} className="text-xs">
                                         {size}
                                     </SelectItem>
                                 ))}

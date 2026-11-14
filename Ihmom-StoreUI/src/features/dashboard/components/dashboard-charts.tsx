@@ -42,6 +42,7 @@ import type {
     DashboardStats,
 } from '@/features/dashboard/types/dashboard.ts';
 import { formatNumber, formatOrderMoney } from '@/features/orders/utils/order-format.ts';
+import { getLanguageMetadata } from '@/i18n/locales';
 
 interface DashboardChartsProps {
     data: DashboardStats;
@@ -99,7 +100,9 @@ function hasSeriesActivity(
 }
 
 export default function DashboardCharts({ data, locale, periodLabel }: DashboardChartsProps) {
-    const { t } = useTranslation('admin');
+    const { t, i18n } = useTranslation('admin');
+
+    const isRTL = getLanguageMetadata(i18n.resolvedLanguage ?? i18n.language).dir === 'rtl';
 
     const statusCounts = useMemo<Record<OrderStatus, number>>(
         () => ({
@@ -111,12 +114,6 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
         }),
         [data],
     );
-    const formatAxisDate = (value: string) => formatBucket(value, data.series_granularity, locale);
-
-    const formatTooltipLabel = (value: React.ReactNode) =>
-        typeof value === 'string'
-            ? formatTooltipDate(value, data.series_granularity, locale)
-            : value;
 
     const statusData = useMemo(
         () => ORDER_STATUSES.map((status) => ({ status, count: statusCounts[status] })),
@@ -160,6 +157,7 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
             })),
         [data.series, data.series_granularity, locale],
     );
+
     const hasOrdersActivity = useMemo(
         () => hasSeriesActivity(data.series, (point) => point.orders),
         [data.series],
@@ -184,7 +182,11 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
 
                 <CardContent>
                     {hasOrdersActivity ? (
-                        <ChartContainer config={ordersChartConfig} className="h-64 w-full">
+                        <ChartContainer
+                            config={ordersChartConfig}
+                            dir={isRTL ? 'rtl' : 'ltr'}
+                            className="h-64 w-full"
+                        >
                             <ComposedChart
                                 data={seriesData}
                                 margin={{ top: 8, right: 12, bottom: 4, left: 12 }}
@@ -193,6 +195,7 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
 
                                 <XAxis
                                     dataKey="label"
+                                    reversed={isRTL}
                                     tickLine={false}
                                     axisLine={false}
                                     minTickGap={16}
@@ -201,8 +204,9 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
 
                                 <YAxis
                                     yAxisId="orders"
+                                    orientation={isRTL ? 'right' : 'left'}
                                     allowDecimals={false}
-                                    width={locale.startsWith('ar') ? 64 : 48}
+                                    width={isRTL ? 64 : 48}
                                     tickMargin={8}
                                     tickLine={false}
                                     axisLine={false}
@@ -211,8 +215,8 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
 
                                 <YAxis
                                     yAxisId="revenue"
-                                    orientation="right"
-                                    width={locale.startsWith('ar') ? 76 : 64}
+                                    orientation={isRTL ? 'left' : 'right'}
+                                    width={isRTL ? 76 : 64}
                                     tickMargin={8}
                                     tickLine={false}
                                     axisLine={false}
@@ -308,6 +312,7 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                         <div className="flex flex-col gap-4">
                             <ChartContainer
                                 config={statusChartConfig}
+                                dir={isRTL ? 'rtl' : 'ltr'}
                                 className="mx-auto aspect-square h-48 w-full"
                             >
                                 <PieChart>
@@ -329,23 +334,7 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                     </Pie>
 
                                     <ChartTooltip
-                                        content={
-                                            <ChartTooltipContent
-                                                labelFormatter={(_, payload) => {
-                                                    const bucket = payload?.[0]?.payload?.bucket;
-
-                                                    return typeof bucket === 'string'
-                                                        ? formatTooltipDate(
-                                                              bucket,
-                                                              data.series_granularity,
-                                                              locale,
-                                                          )
-                                                        : null;
-                                                }}
-                                                nameKey="status"
-                                                hideLabel
-                                            />
-                                        }
+                                        content={<ChartTooltipContent nameKey="status" hideLabel />}
                                     />
                                 </PieChart>
                             </ChartContainer>
@@ -397,7 +386,11 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
 
                 <CardContent>
                     {hasCustomersActivity ? (
-                        <ChartContainer config={customersChartConfig} className="h-52 w-full">
+                        <ChartContainer
+                            config={customersChartConfig}
+                            dir={isRTL ? 'rtl' : 'ltr'}
+                            className="h-52 w-full"
+                        >
                             <AreaChart
                                 data={seriesData}
                                 margin={{ top: 8, right: 12, bottom: 4, left: 12 }}
@@ -426,6 +419,7 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                                 <XAxis
                                     dataKey="label"
+                                    reversed={isRTL}
                                     tickLine={false}
                                     axisLine={false}
                                     minTickGap={16}
@@ -433,8 +427,9 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                 />
 
                                 <YAxis
+                                    orientation={isRTL ? 'right' : 'left'}
                                     allowDecimals={false}
-                                    width={locale.startsWith('ar') ? 64 : 48}
+                                    width={isRTL ? 64 : 48}
                                     tickMargin={8}
                                     tickLine={false}
                                     axisLine={false}

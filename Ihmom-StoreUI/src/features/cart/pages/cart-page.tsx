@@ -49,7 +49,10 @@ export default function CartPage() {
                         </div>
                         {items.length > 0 ? (
                             <p className="text-muted-foreground text-sm" aria-live="polite">
-                                {t('cart.itemCount', { count: itemCount })}
+                                {t('cart.itemCount', {
+                                    count: itemCount,
+                                    ns: 'orders',
+                                })}
                             </p>
                         ) : null}
                     </div>
@@ -244,7 +247,10 @@ export default function CartPage() {
                                 <CardContent className="space-y-4">
                                     <div className="flex items-baseline justify-between gap-3">
                                         <span className="text-muted-foreground text-sm">
-                                            {t('cart.itemCount', { count: itemCount })}
+                                            {t('cart.itemCount', {
+                                                count: itemCount,
+                                                ns: 'orders',
+                                            })}
                                         </span>
                                         <span className="text-xl font-semibold tabular-nums">
                                             {formatOrderMoney(subtotal, locale)}

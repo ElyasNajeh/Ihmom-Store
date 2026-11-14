@@ -921,6 +921,7 @@ export default function CheckoutPage() {
                             <CardDescription>
                                 {t('cart.itemCount', {
                                     count: items.reduce((count, item) => count + item.quantity, 0),
+                                    ns: 'orders',
                                 })}
                             </CardDescription>
                         </CardHeader>
@@ -936,7 +937,10 @@ export default function CheckoutPage() {
                                                 {nameFor(item.nameAr, item.nameEn)}
                                             </span>
                                             <span className="text-muted-foreground text-xs">
-                                                {t('cart.units', { count: item.quantity })}
+                                                {t('cart.units', {
+                                                    count: item.quantity,
+                                                    ns: 'orders',
+                                                })}
                                             </span>
                                         </span>
                                         <span className="shrink-0 tabular-nums">

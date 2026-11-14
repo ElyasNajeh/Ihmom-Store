@@ -223,8 +223,11 @@ export default function AdminOrdersPage() {
                 cell: (order) => (
                     <div className="min-w-0">
                         <p className="font-mono text-sm font-medium">{order.order_number}</p>
-                        <p className="text-muted-foreground text-xs">
-                            {t('orders.itemsCount', { count: order.items.length })}
+                        <p className="text-muted-foreground text-xs" dir="auto">
+                            {t('orders.itemsCount', {
+                                count: order.items.length,
+                                ns: 'admin',
+                            })}
                         </p>
                     </div>
                 ),

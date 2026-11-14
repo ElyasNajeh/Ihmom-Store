@@ -90,7 +90,7 @@
         "itemsHeading": "Cart items",
         "itemsDescription": "Change quantities or remove items before checking out.",
         "cancel": "Cancel",
-        "units": "Qty {{count}}"
+        "units": "Quantity {{count}}"
     },
     "checkout": {
         "meta": {

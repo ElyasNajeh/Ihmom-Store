@@ -88,12 +88,21 @@
         "clearTitle": "إفراغ السلة؟",
         "clearDescription": "ستتم إزالة جميع العناصر من سلتك.",
         "checkout": "المتابعة إلى الدفع",
-        "itemCount_one": "{{count}} عنصر",
-        "itemCount_other": "{{count}} عناصر",
+        "itemCount_zero": "لا توجد عناصر",
+        "itemCount_one": "عنصر واحد",
+        "itemCount_two": "عنصران",
+        "itemCount_few": "{{count}} عناصر",
+        "itemCount_many": "{{count}} عنصرًا",
+        "itemCount_other": "{{count}} عنصر",
         "itemsHeading": "عناصر السلة",
         "itemsDescription": "غيّر الكميات أو أزل العناصر قبل إتمام الطلب.",
         "cancel": "إلغاء",
-        "units": "الكمية {{count}}"
+        "units_zero": "لا توجد وحدات",
+        "units_one": "وحدة واحدة",
+        "units_two": "وحدتان",
+        "units_few": "{{count}} وحدات",
+        "units_many": "{{count}} وحدة",
+        "units_other": "{{count}} وحدة"
     },
     "checkout": {
         "meta": {

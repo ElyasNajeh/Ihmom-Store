@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useForm, type UseFormReturn } from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, useForm, type UseFormReturn, type UseFormSetError } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -32,7 +32,6 @@ import { createProductSchema, updateProductSchema } from '@/features/catalog/sch
 import { applyApiErrors, applyZodErrors } from '@/shared/utils/form-errors.ts';
 import { localizedName, orderBilingualFields } from '@/shared/utils/localized.ts';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
-import type { UseFormSetError } from 'react-hook-form';
 
 export interface ProductDetailsFormValues {
     category_id: string;
@@ -108,6 +107,7 @@ function ProductDetailsFields({
     const { t } = useTranslation('admin');
     const { isArabic } = useLocale();
     const {
+        control,
         register,
         setValue,
         watch,
@@ -116,30 +116,36 @@ function ProductDetailsFields({
 
     const categoryId = watch('category_id');
     const brandId = watch('brand_id');
-    const isActive = watch('is_active');
 
-    const categoryItems = categories.map((category) => {
-        const nameAr = category.name_ar || category.name_en;
-        const nameEn = category.name_en || category.name_ar;
+    const categoryItems = useMemo(
+        () =>
+            categories.map((category) => {
+                const nameAr = category.name_ar || category.name_en;
+                const nameEn = category.name_en || category.name_ar;
 
-        return {
-            value: String(category.id),
-            label: localizedName(category, isArabic),
-            keywords: `${nameAr} ${nameEn}`,
-        };
-    });
+                return {
+                    value: String(category.id),
+                    label: localizedName(category, isArabic),
+                    keywords: `${nameAr} ${nameEn}`,
+                };
+            }),
+        [categories, isArabic],
+    );
 
-    const brandItems = brands.map((brand) => {
-        const nameAr = brand.name_ar || brand.name_en;
-        const nameEn = brand.name_en || brand.name_ar;
+    const brandItems = useMemo(
+        () =>
+            brands.map((brand) => {
+                const nameAr = brand.name_ar || brand.name_en;
+                const nameEn = brand.name_en || brand.name_ar;
 
-        return {
-            value: String(brand.id),
-            label: localizedName(brand, isArabic),
-            keywords: `${nameAr} ${nameEn}`,
-        };
-    });
-
+                return {
+                    value: String(brand.id),
+                    label: localizedName(brand, isArabic),
+                    keywords: `${nameAr} ${nameEn}`,
+                };
+            }),
+        [brands, isArabic],
+    );
     const nameFields = [
         {
             field: 'name_ar' as const,
@@ -276,7 +282,6 @@ function ProductDetailsFields({
                     </div>
                 ))}
             </div>
-
             <div className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
                 <div className="min-w-0">
                     <Label htmlFor="product-active" className="cursor-pointer">
@@ -287,10 +292,18 @@ function ProductDetailsFields({
                     </p>
                 </div>
 
-                <Switch
-                    id="product-active"
-                    checked={isActive}
-                    onCheckedChange={(checked) => setValue('is_active', checked)}
+                <Controller
+                    control={control}
+                    name="is_active"
+                    render={({ field }) => (
+                        <Switch
+                            id="product-active"
+                            name={field.name}
+                            checked={Boolean(field.value)}
+                            onCheckedChange={field.onChange}
+                            onBlur={field.onBlur}
+                        />
+                    )}
                 />
             </div>
         </div>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 
@@ -53,18 +53,49 @@ export function SearchableSelect({
         [options, value],
     );
 
+    const [inputValue, setInputValue] = useState<string>(() => selectedOption?.label ?? '');
+
+    // Keep displayed label in sync when `value` changes externally (e.g. form.reset())
+    // or when `options` finish loading asynchronously after `value` is already set.
+    useEffect(() => {
+        setInputValue(selectedOption?.label ?? '');
+    }, [selectedOption?.value, selectedOption?.label]);
+
     return (
         <Combobox.Root
             items={options}
             value={selectedOption}
-            onValueChange={(next) => onChange(next?.value)}
+            inputValue={inputValue}
+            onInputValueChange={(nextInputValue) => {
+                setInputValue(nextInputValue);
+            }}
+            onValueChange={(next) => {
+                setInputValue(next?.label ?? '');
+                onChange(next?.value);
+            }}
+            onOpenChange={(open) => {
+                if (!open) {
+                    setInputValue(selectedOption?.label ?? '');
+                }
+            }}
             itemToStringLabel={(option) => option.label}
             itemToStringValue={(option) => option.value}
-            isItemEqualToValue={(option, selected) => option.value === selected.value}
+            isItemEqualToValue={(option, selected) =>
+                Boolean(option && selected && option.value === selected.value)
+            }
             filter={(option, query) => {
+                const trimmed = query.trim().toLocaleLowerCase();
+                if (!trimmed) return true;
+
+                // When the input matches the currently selected option's label,
+                // show all options on open instead of filtering down to 1 item.
+                if (selectedOption && query === selectedOption.label) {
+                    return true;
+                }
+
                 const haystack = `${option.label} ${option.keywords ?? ''}`.toLocaleLowerCase();
 
-                return haystack.includes(query.trim().toLocaleLowerCase());
+                return haystack.includes(trimmed);
             }}
             disabled={disabled}
         >

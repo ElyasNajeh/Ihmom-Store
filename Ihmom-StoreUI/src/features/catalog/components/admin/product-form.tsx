@@ -146,6 +146,7 @@ function ProductDetailsFields({
             }),
         [brands, isArabic],
     );
+
     const nameFields = [
         {
             field: 'name_ar' as const,
@@ -282,6 +283,7 @@ function ProductDetailsFields({
                     </div>
                 ))}
             </div>
+
             <div className="border-border flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
                 <div className="min-w-0">
                     <Label htmlFor="product-active" className="cursor-pointer">
@@ -699,9 +701,28 @@ export function ProductEditForm({
         defaultValues: toDetailsValues(product),
     });
     const { handleSubmit, reset, setError } = form;
+
     useEffect(() => {
-        reset(toDetailsValues(product));
-    }, [product, reset]);
+        reset({
+            category_id: String(product.category_id),
+            brand_id: String(product.brand_id),
+            name_ar: product.name_ar,
+            name_en: product.name_en,
+            description_ar: product.description_ar ?? '',
+            description_en: product.description_en ?? '',
+            is_active: product.is_active,
+        });
+    }, [
+        product.id,
+        product.category_id,
+        product.brand_id,
+        product.name_ar,
+        product.name_en,
+        product.description_ar,
+        product.description_en,
+        product.is_active,
+        reset,
+    ]);
 
     const submit = handleSubmit(async (values) => {
         if (isSubmitting) return;
@@ -756,6 +777,15 @@ export function ProductEditForm({
 
         try {
             await onSubmit(parsed.data);
+            reset({
+                category_id: String(parsed.data.category_id),
+                brand_id: String(parsed.data.brand_id),
+                name_ar: parsed.data.name_ar,
+                name_en: parsed.data.name_en,
+                description_ar: parsed.data.description_ar ?? '',
+                description_en: parsed.data.description_en ?? '',
+                is_active: parsed.data.is_active,
+            });
         } catch (error) {
             applyApiErrors(error, setError, {
                 name_ar: t('validation.invalidField'),

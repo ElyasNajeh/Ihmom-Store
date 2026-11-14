@@ -53,20 +53,28 @@ export function SearchableSelect({
         [options, value],
     );
 
+    const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState<string>(() => selectedOption?.label ?? '');
 
-    // Keep displayed label in sync when `value` changes externally (e.g. form.reset())
-    // or when `options` finish loading asynchronously after `value` is already set.
+    // Whenever the popup is closed (including right after item selection, dismissal,
+    // async option loading, or external form.reset()), keep the input synced to the
+    // selected option's label.
     useEffect(() => {
-        setInputValue(selectedOption?.label ?? '');
-    }, [selectedOption?.value, selectedOption?.label]);
+        if (!isOpen) {
+            setInputValue(selectedOption?.label ?? '');
+        }
+    }, [isOpen, selectedOption?.value, selectedOption?.label]);
 
     return (
         <Combobox.Root
             items={options}
             value={selectedOption}
+            open={isOpen}
             inputValue={inputValue}
-            onInputValueChange={(nextInputValue) => {
+            onInputValueChange={(nextInputValue, eventDetails) => {
+                if (eventDetails.reason === 'item-press') {
+                    return;
+                }
                 setInputValue(nextInputValue);
             }}
             onValueChange={(next) => {
@@ -74,9 +82,7 @@ export function SearchableSelect({
                 onChange(next?.value);
             }}
             onOpenChange={(open) => {
-                if (!open) {
-                    setInputValue(selectedOption?.label ?? '');
-                }
+                setIsOpen(open);
             }}
             itemToStringLabel={(option) => option.label}
             itemToStringValue={(option) => option.value}
@@ -87,8 +93,6 @@ export function SearchableSelect({
                 const trimmed = query.trim().toLocaleLowerCase();
                 if (!trimmed) return true;
 
-                // When the input matches the currently selected option's label,
-                // show all options on open instead of filtering down to 1 item.
                 if (selectedOption && query === selectedOption.label) {
                     return true;
                 }

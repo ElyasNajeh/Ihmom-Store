@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { OrderHistoryList } from '@/features/orders/components/store/order-history-list.tsx';
 import { OrderLookupForm } from '@/features/orders/components/store/order-lookup-form.tsx';
+import { useOrderHistoryLookup } from '@/features/orders/hooks/useOrderHistoryLookup.ts';
 import {
     Card,
     CardContent,
@@ -10,12 +12,17 @@ import {
     CardTitle,
 } from '@/shared/components/ui/card.tsx';
 import { useLocale } from '@/shared/hooks/useLocale.ts';
-import { useOrderHistoryLookup } from '@/features/orders/hooks/useOrderHistoryLookup.ts';
 
 export default function MyOrdersPage() {
     const { t } = useTranslation('orders');
     const { locale } = useLocale();
     const lookup = useOrderHistoryLookup();
+
+    useEffect(() => {
+        return () => {
+            lookup.clear();
+        };
+    }, [lookup.clear]);
 
     const orders = lookup.result ? [lookup.result] : [];
     const isInitialLoading = lookup.isSearching && !lookup.result;
@@ -56,7 +63,7 @@ export default function MyOrdersPage() {
                         {t('history.title')}
                     </h2>
 
-                    {lookup.hasSearched && !lookup.errorKind && (
+                    {lookup.hasAttemptedLookup && !lookup.errorKind && (
                         <p className="text-muted-foreground text-sm" aria-live="polite">
                             {isInitialLoading ? t('history.loading') : t('history.verified')}
                         </p>
@@ -66,7 +73,7 @@ export default function MyOrdersPage() {
                 <OrderHistoryList
                     orders={orders}
                     token={lookup.token}
-                    hasSearched={lookup.hasSearched}
+                    hasSearched={lookup.hasAttemptedLookup}
                     isLoading={isInitialLoading}
                     errorKind={lookup.errorKind}
                     errorMessage={lookup.errorMessage}

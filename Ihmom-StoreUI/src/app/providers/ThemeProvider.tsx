@@ -31,7 +31,7 @@ export function ThemeProvider({
 
     useEffect(() => {
         const root = document.documentElement;
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const mediaQuery = window.matchMedia(`(prefers-color-scheme: ${THEME.DARK})`);
 
         const applyTheme = () => {
             root.classList.remove(THEME.LIGHT, THEME.DARK);

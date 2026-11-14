@@ -80,6 +80,8 @@
 
         <!-- Initialize theme and language before React renders -->
         <script>
+            import { THEME } from '@/features/theme/constants/theme.ts';
+
             (function () {
                 const root = document.documentElement;
 
@@ -87,21 +89,21 @@
                     const savedTheme = localStorage.getItem('theme');
 
                     const systemPrefersDark = window.matchMedia(
-                        '(prefers-color-scheme: dark)',
+                        `(prefers-color-scheme:${THEME.DARK})`,
                     ).matches;
 
                     const theme =
-                        savedTheme === 'light' || savedTheme === 'dark'
+                        savedTheme === THEME.LIGHT|| savedTheme === THEME.DARK
                             ? savedTheme
                             : systemPrefersDark
-                              ? 'dark'
-                              : 'light';
+                              ? THEME.DARK
+                              : THEME.LIGHT;
 
                     root.dataset.theme = theme;
-                    root.classList.toggle('dark', theme === 'dark');
+                    root.classList.toggle(THEME.DARK, theme === THEME.DARK);
                 } catch {
-                    root.dataset.theme = 'light';
-                    root.classList.remove('dark');
+                    root.dataset.theme = THEME.LIGHT;
+                    root.classList.remove(THEME.DARK);
                 }
 
                 try {

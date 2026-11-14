@@ -59,6 +59,7 @@ function ChartContainer({
             <div
                 data-slot="chart"
                 data-chart={chartId}
+                dir="inherit"
                 className={cn(
                     "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
                     className,
@@ -169,6 +170,7 @@ function ChartTooltipContent({
 
     return (
         <div
+            dir="inherit"
             className={cn(
                 'border-border/50 bg-background grid min-w-32 items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl',
                 className,
@@ -235,7 +237,7 @@ function ChartTooltipContent({
                                             {item.value != null && (
                                                 <span className="text-foreground font-mono font-medium tabular-nums">
                                                     {typeof item.value === 'number'
-                                                        ? item.value.toLocaleString()
+                                                        ? new Intl.NumberFormat().format(item.value)
                                                         : String(item.value)}
                                                 </span>
                                             )}
@@ -270,6 +272,7 @@ function ChartLegendContent({
 
     return (
         <div
+            dir="inherit"
             className={cn(
                 'flex items-center justify-center gap-4',
                 verticalAlign === 'top' ? 'pb-3' : 'pt-3',

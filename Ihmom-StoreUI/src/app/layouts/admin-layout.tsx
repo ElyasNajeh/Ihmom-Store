@@ -10,12 +10,11 @@ export function AdminLayout() {
     const { i18n } = useTranslation();
     useScrollToTopOnNavigate();
 
-    const side = i18n.dir() === 'rtl' ? 'right' : 'left';
-
+    const dir: 'ltr' | 'rtl' = i18n.dir() === 'rtl' ? 'rtl' : 'ltr';
+    const side = dir === 'rtl' ? 'right' : 'left';
     return (
-        <SidebarProvider>
+        <SidebarProvider dir={dir}>
             <AdminSidebar side={side} />
-
             <SidebarInset className="min-w-0">
                 <AdminHeader />
 

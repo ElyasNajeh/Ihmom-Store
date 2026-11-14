@@ -38,7 +38,8 @@ import { useLocale } from '@/shared/hooks/useLocale.ts';
 import { getStoreName } from '@/features/storefront/constants/store.ts';
 
 export function StoreSidebar({ side }: { side: 'left' | 'right' }) {
-    const { t } = useTranslation(['navigation', 'common']);
+    const { t, i18n } = useTranslation(['navigation', 'common']);
+    const dir = i18n.dir();
     const { isArabic } = useLocale();
     const storeName = getStoreName(isArabic);
     const { setOpenMobile } = useSidebar();
@@ -102,7 +103,7 @@ export function StoreSidebar({ side }: { side: 'left' | 'right' }) {
     };
 
     return (
-        <Sidebar side={side} collapsible="offcanvas">
+        <Sidebar dir={dir} side={side} collapsible="offcanvas">
             <SidebarHeader className="border-sidebar-border border-b">
                 <div className="flex items-center justify-between gap-2">
                     <Link
@@ -136,7 +137,6 @@ export function StoreSidebar({ side }: { side: 'left' | 'right' }) {
                     </Button>
                 </div>
             </SidebarHeader>
-
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>{t('navigation:header.browse')}</SidebarGroupLabel>
@@ -193,7 +193,6 @@ export function StoreSidebar({ side }: { side: 'left' | 'right' }) {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-
             <SidebarFooter className="border-sidebar-border border-t">
                 <div className="flex items-center justify-between gap-3 px-1 pt-1">
                     <LanguageSelector />

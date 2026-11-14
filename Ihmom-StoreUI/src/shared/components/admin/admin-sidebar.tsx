@@ -50,7 +50,6 @@ export function AdminSidebar({ side }: { side: 'left' | 'right' }) {
                     </span>
                 </Link>
             </SidebarHeader>
-
             <SidebarContent>
                 {ADMIN_NAV_GROUPS.map((group) => (
                     <SidebarGroup key={group.labelKey}>
@@ -84,7 +83,6 @@ export function AdminSidebar({ side }: { side: 'left' | 'right' }) {
                     </SidebarGroup>
                 ))}
             </SidebarContent>
-
             <SidebarFooter className="border-sidebar-border border-t">
                 <div className="text-muted-foreground flex items-center gap-2 px-1 py-1 text-xs group-data-[collapsible=icon]:hidden">
                     <span className="bg-muted text-foreground grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold">
@@ -107,7 +105,6 @@ export function AdminSidebar({ side }: { side: 'left' | 'right' }) {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
-
             <SidebarRail />
         </Sidebar>
     );

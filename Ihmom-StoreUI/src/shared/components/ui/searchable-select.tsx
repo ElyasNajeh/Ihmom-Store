@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 
@@ -48,7 +48,6 @@ export function SearchableSelect({
     name,
     'aria-describedby': ariaDescribedBy,
 }: SearchableSelectProps) {
-    const [inputValue, setInputValue] = useState('');
     const selectedOption = useMemo(
         () => options.find((option) => option.value === value) ?? null,
         [options, value],
@@ -59,8 +58,6 @@ export function SearchableSelect({
             items={options}
             value={selectedOption}
             onValueChange={(next) => onChange(next?.value)}
-            inputValue={inputValue}
-            onInputValueChange={setInputValue}
             itemToStringLabel={(option) => option.label}
             itemToStringValue={(option) => option.value}
             isItemEqualToValue={(option, selected) => option.value === selected.value}

@@ -41,20 +41,17 @@ export default function AdminLoginPage() {
         handleSubmit,
         setError,
         clearErrors,
-        formState: { errors },
+        formState: { errors, isSubmitting },
     } = useForm<LoginAdmin>({
         defaultValues: ADMIN_LOGIN_FORM_DEFAULTS,
     });
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
 
+
     const BackIcon = i18n.dir() === 'rtl' ? ArrowRight : ArrowLeft;
-
     const submit = handleSubmit(async (values) => {
-        if (isSubmitting) return;
-
         setServerError(null);
 
         const parsed = loginAdminSchema.safeParse(values);
@@ -67,8 +64,6 @@ export default function AdminLoginPage() {
             return;
         }
 
-        setIsSubmitting(true);
-
         try {
             await login(parsed.data);
 
@@ -80,7 +75,12 @@ export default function AdminLoginPage() {
             const state = location.state as LoginLocationState | null;
             const from = state?.from;
 
-            navigate(from && from.startsWith('/admin') ? from : '/admin', { replace: true });
+            const destination =
+                typeof from === 'string' && (from === '/admin' || from.startsWith('/admin/'))
+                    ? from
+                    : '/admin';
+
+            navigate(destination, { replace: true });
         } catch (error) {
             const status = axios.isAxiosError(error) ? error.response?.status : undefined;
 
@@ -89,8 +89,6 @@ export default function AdminLoginPage() {
                     ? t('login.invalidCredentials')
                     : (getApiErrorMessage(error) ?? t('login.genericError')),
             );
-        } finally {
-            setIsSubmitting(false);
         }
     });
 
@@ -141,7 +139,7 @@ export default function AdminLoginPage() {
                                     key={feature}
                                     className="text-muted-foreground flex items-center gap-3 text-sm"
                                 >
-                                    <span className="bg-brand/15 text-brand-foreground grid size-6 shrink-0 place-items-center rounded-full">
+                                    <span className="bg-primary text-primary-foreground grid size-6 shrink-0 place-items-center rounded-full">
                                         <Check className="size-3.5" aria-hidden="true" />
                                     </span>
                                     {feature}
@@ -241,7 +239,7 @@ export default function AdminLoginPage() {
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            className="text-muted-foreground hover:text-foreground absolute end-1 top-1/2 size-8 -translate-y-1/2"
+                                            className="text-muted-foreground hover:text-foreground absolute inset-y-0 end-1.5 my-auto size-8 active:not-aria-[haspopup]:translate-y-0"
                                             aria-label={
                                                 showPassword
                                                     ? t('login.hidePassword')
@@ -249,7 +247,7 @@ export default function AdminLoginPage() {
                                             }
                                             aria-pressed={showPassword}
                                             onClick={() => setShowPassword((visible) => !visible)}
-                                            tabIndex={-1}
+                                            disabled={isSubmitting}
                                         >
                                             {showPassword ? (
                                                 <EyeOff className="size-4" aria-hidden="true" />

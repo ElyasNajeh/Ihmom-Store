@@ -200,11 +200,12 @@ function ProductDetailsFields({
                         id="product-category"
                         options={categoryItems}
                         value={categoryId || null}
-                        onChange={(value) => {
-                            if (value) {
-                                setValue('category_id', value, { shouldValidate: true });
-                            }
-                        }}
+                        onChange={(value) =>
+                            setValue('category_id', value ?? '', {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                            })
+                        }
                         placeholder={t('products.selectCategory')}
                         searchPlaceholder={t('products.searchCategories')}
                         emptyMessage={t('products.noCategoriesFound')}
@@ -224,11 +225,12 @@ function ProductDetailsFields({
                         id="product-brand"
                         options={brandItems}
                         value={brandId || null}
-                        onChange={(value) => {
-                            if (value) {
-                                setValue('brand_id', value, { shouldValidate: true });
-                            }
-                        }}
+                        onChange={(value) =>
+                            setValue('brand_id', value ?? '', {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                            })
+                        }
                         placeholder={t('products.selectBrand')}
                         searchPlaceholder={t('products.searchBrands')}
                         emptyMessage={t('products.noBrandsFound')}
@@ -686,7 +688,7 @@ export function ProductEditForm({
     const { handleSubmit, reset, setError } = form;
     useEffect(() => {
         reset(toDetailsValues(product));
-    }, [product.id, reset]);
+    }, [product, reset]);
 
     const submit = handleSubmit(async (values) => {
         if (isSubmitting) return;

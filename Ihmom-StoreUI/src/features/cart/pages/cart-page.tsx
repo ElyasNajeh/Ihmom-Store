@@ -24,11 +24,11 @@ export default function CartPage() {
     const nameFor = (nameAr: string, nameEn: string) => localizedText(nameEn, nameAr, isArabic);
 
     const variantFor = (nameAr: string | null, nameEn: string | null) => {
-        const label = localizedText(nameEn, nameAr, isArabic);
+        if (nameEn === DEFAULT_VARIANT_NAME || nameAr === DEFAULT_VARIANT_NAME) {
+            return t('cart.defaultVariant');
+        }
 
-        if (!label) return null;
-
-        return label === DEFAULT_VARIANT_NAME ? t('cart.defaultVariant') : label;
+        return localizedText(nameEn, nameAr, isArabic) || null;
     };
 
     return (

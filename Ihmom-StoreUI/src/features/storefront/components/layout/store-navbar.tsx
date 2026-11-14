@@ -27,8 +27,8 @@ export function StoreNavbar() {
     const { isArabic } = useLocale();
     const storeName = getStoreName(isArabic);
     const { itemCount } = useCart();
-    const side = i18n.dir() === 'rtl' ? 'right' : 'left';
-
+    const dir: 'ltr' | 'rtl' = i18n.dir() === 'rtl' ? 'rtl' : 'ltr';
+    const side = dir === 'rtl' ? 'right' : 'left';
     const aboutHref = location.pathname === '/about' ? '#about' : '/about#about';
     const contactHref = '/contact';
 
@@ -75,7 +75,7 @@ export function StoreNavbar() {
     }, [location.pathname, location.hash]);
 
     return (
-        <SidebarProvider style={{ display: 'contents' }}>
+        <SidebarProvider dir={dir} style={{ display: 'contents' }}>
             <header
                 className={cn(
                     'border-border/80 bg-background/95 supports-[backdrop-filter]:bg-background/85 sticky top-0 z-40 border-b backdrop-blur transition-shadow duration-300',
@@ -88,7 +88,7 @@ export function StoreNavbar() {
                             aria-label={t('navigation:header.openNavigation')}
                             variant="outline"
                             size="icon"
-                            className="size-10 shrink-0 md:hidden rtl:rotate-180 [&_svg]:size-5!"
+                            className="size-10 shrink-0 md:hidden [&_svg]:size-5!"
                         />
 
                         <Link
@@ -181,7 +181,7 @@ export function StoreNavbar() {
                                 <ShoppingBag className="size-5" aria-hidden="true" />
 
                                 {itemCount > 0 && (
-                                    <span className="bg-primary text-primary-foreground absolute -top-0.5 -right-0.5 grid size-5 place-items-center rounded-full text-[10px] font-semibold tabular-nums">
+                                    <span className="bg-primary text-primary-foreground absolute -end-0.5 -top-0.5 grid size-5 place-items-center rounded-full text-[10px] font-semibold tabular-nums">
                                         {formatCartBadgeCount(itemCount)}
                                     </span>
                                 )}
@@ -200,9 +200,7 @@ export function StoreNavbar() {
                     </div>
                 </div>
             </header>
-
             {isMobile ? <StoreSidebar side={side} /> : null}
-
             <StoreSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
         </SidebarProvider>
     );

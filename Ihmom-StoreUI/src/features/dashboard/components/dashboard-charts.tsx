@@ -49,6 +49,23 @@ interface DashboardChartsProps {
     periodLabel: string;
 }
 
+function formatTooltipDate(value: string, granularity: DashboardGranularity, locale: string) {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    const options: Intl.DateTimeFormatOptions =
+        granularity === 'hour'
+            ? { dateStyle: 'medium', hour: 'numeric' }
+            : granularity === 'month'
+              ? { month: 'long', year: 'numeric' }
+              : { dateStyle: 'medium' };
+
+    return new Intl.DateTimeFormat(locale, options).format(date);
+}
+
 function formatBucket(value: string, granularity: DashboardGranularity, locale: string) {
     const date = new Date(value);
 
@@ -94,6 +111,12 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
         }),
         [data],
     );
+    const formatAxisDate = (value: string) => formatBucket(value, data.series_granularity, locale);
+
+    const formatTooltipLabel = (value: React.ReactNode) =>
+        typeof value === 'string'
+            ? formatTooltipDate(value, data.series_granularity, locale)
+            : value;
 
     const statusData = useMemo(
         () => ORDER_STATUSES.map((status) => ({ status, count: statusCounts[status] })),
@@ -129,6 +152,7 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
     const seriesData = useMemo(
         () =>
             data.series.map((point) => ({
+                bucket: point.bucket,
                 label: formatBucket(point.bucket, data.series_granularity, locale),
                 orders: point.orders,
                 revenue: Number(point.revenue),
@@ -136,7 +160,6 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
             })),
         [data.series, data.series_granularity, locale],
     );
-
     const hasOrdersActivity = useMemo(
         () => hasSeriesActivity(data.series, (point) => point.orders),
         [data.series],
@@ -162,7 +185,10 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                 <CardContent>
                     {hasOrdersActivity ? (
                         <ChartContainer config={ordersChartConfig} className="h-64 w-full">
-                            <ComposedChart data={seriesData} margin={{ left: 4, right: 4 }}>
+                            <ComposedChart
+                                data={seriesData}
+                                margin={{ top: 8, right: 12, bottom: 4, left: 12 }}
+                            >
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
 
                                 <XAxis
@@ -176,7 +202,8 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                 <YAxis
                                     yAxisId="orders"
                                     allowDecimals={false}
-                                    width={36}
+                                    width={locale.startsWith('ar') ? 64 : 48}
+                                    tickMargin={8}
                                     tickLine={false}
                                     axisLine={false}
                                     tickFormatter={(value) => formatCompact(Number(value), locale)}
@@ -185,7 +212,8 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                 <YAxis
                                     yAxisId="revenue"
                                     orientation="right"
-                                    width={56}
+                                    width={locale.startsWith('ar') ? 76 : 64}
+                                    tickMargin={8}
                                     tickLine={false}
                                     axisLine={false}
                                     tickFormatter={(value) => formatCompact(Number(value), locale)}
@@ -194,11 +222,23 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                 <ChartTooltip
                                     content={
                                         <ChartTooltipContent
+                                            labelFormatter={(_, payload) => {
+                                                const bucket = payload?.[0]?.payload?.bucket;
+
+                                                return typeof bucket === 'string'
+                                                    ? formatTooltipDate(
+                                                          bucket,
+                                                          data.series_granularity,
+                                                          locale,
+                                                      )
+                                                    : null;
+                                            }}
                                             formatter={(value, name) => {
                                                 const isRevenue = name === 'revenue';
                                                 const label = isRevenue
                                                     ? t('dashboard.revenueSeries')
                                                     : t('dashboard.ordersSeries');
+
                                                 const display = isRevenue
                                                     ? formatOrderMoney(Number(value), locale)
                                                     : formatNumber(Number(value), locale);
@@ -289,7 +329,23 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                     </Pie>
 
                                     <ChartTooltip
-                                        content={<ChartTooltipContent nameKey="status" hideLabel />}
+                                        content={
+                                            <ChartTooltipContent
+                                                labelFormatter={(_, payload) => {
+                                                    const bucket = payload?.[0]?.payload?.bucket;
+
+                                                    return typeof bucket === 'string'
+                                                        ? formatTooltipDate(
+                                                              bucket,
+                                                              data.series_granularity,
+                                                              locale,
+                                                          )
+                                                        : null;
+                                                }}
+                                                nameKey="status"
+                                                hideLabel
+                                            />
+                                        }
                                     />
                                 </PieChart>
                             </ChartContainer>
@@ -342,7 +398,10 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                 <CardContent>
                     {hasCustomersActivity ? (
                         <ChartContainer config={customersChartConfig} className="h-52 w-full">
-                            <AreaChart data={seriesData} margin={{ left: 4, right: 4 }}>
+                            <AreaChart
+                                data={seriesData}
+                                margin={{ top: 8, right: 12, bottom: 4, left: 12 }}
+                            >
                                 <defs>
                                     <linearGradient
                                         id="dashboard-customers-fill"
@@ -365,7 +424,6 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                 </defs>
 
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
-
                                 <XAxis
                                     dataKey="label"
                                     tickLine={false}
@@ -376,7 +434,8 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
 
                                 <YAxis
                                     allowDecimals={false}
-                                    width={36}
+                                    width={locale.startsWith('ar') ? 64 : 48}
+                                    tickMargin={8}
                                     tickLine={false}
                                     axisLine={false}
                                     tickFormatter={(value) => formatCompact(Number(value), locale)}
@@ -385,6 +444,17 @@ export default function DashboardCharts({ data, locale, periodLabel }: Dashboard
                                 <ChartTooltip
                                     content={
                                         <ChartTooltipContent
+                                            labelFormatter={(_, payload) => {
+                                                const bucket = payload?.[0]?.payload?.bucket;
+
+                                                return typeof bucket === 'string'
+                                                    ? formatTooltipDate(
+                                                          bucket,
+                                                          data.series_granularity,
+                                                          locale,
+                                                      )
+                                                    : null;
+                                            }}
                                             formatter={(value) => (
                                                 <div className="flex w-full items-center justify-between gap-3">
                                                     <span className="text-muted-foreground flex items-center gap-2">

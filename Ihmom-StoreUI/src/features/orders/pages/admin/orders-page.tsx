@@ -358,8 +358,7 @@ export default function AdminOrdersPage() {
                                 orientation="vertical"
                                 className="hidden h-8 self-center lg:block"
                             />
-
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="grid grid-cols-2 gap-2">
                                 <Select
                                     items={statusItems}
                                     value={status}
@@ -370,7 +369,7 @@ export default function AdminOrdersPage() {
                                     <SelectTrigger
                                         size="sm"
                                         aria-label={t('orders.status')}
-                                        className="w-40"
+                                        className="w-full"
                                     >
                                         <SelectValue />
                                     </SelectTrigger>
@@ -395,15 +394,17 @@ export default function AdminOrdersPage() {
                                     emptyMessage={t('orders.noAreasFound')}
                                     openLabel={t('orders.deliveryArea')}
                                     clearable={false}
-                                    className="w-56"
+                                    className="w-full min-w-0"
                                     inputClassName="h-9"
                                 />
 
-                                <AdminSortSelect
-                                    value={sort}
-                                    onChange={updateSort}
-                                    options={sortOptions}
-                                />
+                                <div className="col-span-2 sm:col-span-1">
+                                    <AdminSortSelect
+                                        value={sort}
+                                        onChange={updateSort}
+                                        options={sortOptions}
+                                    />
+                                </div>
                             </div>
                         </div>
 

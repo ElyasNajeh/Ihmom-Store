@@ -7,27 +7,41 @@ export function isCatalogSeed(seed: unknown): seed is string {
     return typeof seed === 'string' && seed.length === 32 && /^[0-9a-f]{32}$/.test(seed);
 }
 
+const SEED_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 export function getCatalogSeed(): string {
     if (memorySeed) return memorySeed;
 
     try {
-        const stored = localStorage.getItem(CATALOG_SEED_STORAGE_KEY);
-        if (isCatalogSeed(stored)) {
-            memorySeed = stored;
-            return memorySeed;
+        const raw = localStorage.getItem(CATALOG_SEED_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw) as { seed?: unknown; expiresAt?: unknown };
+            if (
+                isCatalogSeed(parsed.seed) &&
+                typeof parsed.expiresAt === 'number' &&
+                Date.now() < parsed.expiresAt
+            ) {
+                memorySeed = parsed.seed;
+                return memorySeed;
+            }
         }
     } catch {
-        // Storage can be unavailable in private or restricted browsing contexts.
+        // Storage unavailable or legacy plain-string value
     }
 
     memorySeed = Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) =>
         byte.toString(16).padStart(2, '0'),
     ).join('');
+
     try {
-        localStorage.setItem(CATALOG_SEED_STORAGE_KEY, memorySeed);
+        localStorage.setItem(
+            CATALOG_SEED_STORAGE_KEY,
+            JSON.stringify({ seed: memorySeed, expiresAt: Date.now() + SEED_TTL_MS }),
+        );
     } catch {
         // Keep the same selection for this module lifetime even without storage.
     }
+
     return memorySeed;
 }
 

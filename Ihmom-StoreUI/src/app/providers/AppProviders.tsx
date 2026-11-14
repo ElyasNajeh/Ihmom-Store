@@ -10,6 +10,9 @@ import { DocumentLanguageSync } from '@/i18n/DocumentLanguageSync.tsx';
 import { AppErrorBoundary } from '@/shared/components/app/app-error-boundary.tsx';
 import { Toaster } from '@/shared/components/ui/toast.tsx';
 import { TooltipProvider } from '@/shared/components/ui/tooltip.tsx';
+import { DirectionProvider } from '@base-ui/react/direction-provider';
+import { type Language, LANGUAGE_METADATA } from '@/i18n/locales.ts';
+import { useTranslation } from 'react-i18next';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -53,17 +56,23 @@ const queryClient = new QueryClient({
 });
 
 export function AppProviders({ children }: { children: ReactNode }) {
+    const { i18n } = useTranslation();
+    const resolvedLanguage = i18n.resolvedLanguage?.split('-')[0];
+    const language: Language = resolvedLanguage === 'ar' ? 'ar' : 'en';
+    const direction = LANGUAGE_METADATA[language].dir;
     return (
         <QueryClientProvider client={queryClient}>
             <AppErrorBoundary>
-                <ThemeProvider defaultTheme={THEME_DEFAULT} storageKey={THEME_STORAGE_KEY}>
-                    <TooltipProvider>
-                        <Toaster>
-                            <DocumentLanguageSync />
-                            <CartProvider>{children}</CartProvider>
-                        </Toaster>
-                    </TooltipProvider>
-                </ThemeProvider>
+                <DirectionProvider direction={direction}>
+                    <ThemeProvider defaultTheme={THEME_DEFAULT} storageKey={THEME_STORAGE_KEY}>
+                        <TooltipProvider>
+                            <Toaster>
+                                <DocumentLanguageSync />
+                                <CartProvider>{children}</CartProvider>
+                            </Toaster>
+                        </TooltipProvider>
+                    </ThemeProvider>
+                </DirectionProvider>
             </AppErrorBoundary>
 
             {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}

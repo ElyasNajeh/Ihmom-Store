@@ -5,9 +5,12 @@ import './i18n';
 import './styles/index.css';
 
 import { App } from '@/app/App.tsx';
+import { AppProviders } from '@/app/providers/AppProviders.tsx';
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <App />
+        <AppProviders>
+            <App />
+        </AppProviders>
     </StrictMode>,
 );

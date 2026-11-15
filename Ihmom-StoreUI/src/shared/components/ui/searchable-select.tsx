@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 
@@ -54,16 +54,11 @@ export function SearchableSelect({
     );
 
     const [isOpen, setIsOpen] = useState(false);
-    const [inputValue, setInputValue] = useState<string>(() => selectedOption?.label ?? '');
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // Whenever the popup is closed (including right after item selection, dismissal,
-    // async option loading, or external form.reset()), keep the input synced to the
-    // selected option's label.
-    useEffect(() => {
-        if (!isOpen) {
-            setInputValue(selectedOption?.label ?? '');
-        }
-    }, [isOpen, selectedOption?.value, selectedOption?.label]);
+    // When closed, ALWAYS render the resolved selected option's label directly.
+    // This eliminates any race between blur, item-press, and async option loading.
+    const inputValue = isOpen ? searchQuery : (selectedOption?.label ?? '');
 
     return (
         <Combobox.Root
@@ -72,17 +67,20 @@ export function SearchableSelect({
             open={isOpen}
             inputValue={inputValue}
             onInputValueChange={(nextInputValue, eventDetails) => {
-                if (eventDetails.reason === 'item-press') {
-                    return;
+                if (
+                    eventDetails.reason === 'input-change' ||
+                    eventDetails.reason === 'input-clear'
+                ) {
+                    setSearchQuery(nextInputValue);
                 }
-                setInputValue(nextInputValue);
             }}
             onValueChange={(next) => {
-                setInputValue(next?.label ?? '');
+                setSearchQuery(next?.label ?? '');
                 onChange(next?.value);
             }}
             onOpenChange={(open) => {
                 setIsOpen(open);
+                setSearchQuery(open ? (selectedOption?.label ?? '') : '');
             }}
             itemToStringLabel={(option) => option.label}
             itemToStringValue={(option) => option.value}

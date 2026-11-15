@@ -18,13 +18,16 @@ jobs:
     name: Backend unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     defaults:
       run:
         working-directory: Ihmom-StoreAPI
+
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -32,8 +35,10 @@ jobs:
           cache-dependency-path: |
             Ihmom-StoreAPI/requirements.txt
             Ihmom-StoreAPI/requirements-dev.txt
+
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
+
       - name: Run unit tests
         run: python -m pytest tests/unit
 
@@ -41,25 +46,67 @@ jobs:
     name: Frontend checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     defaults:
       run:
         working-directory: Ihmom-StoreUI
+
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: Ihmom-StoreUI/package-lock.json
+
       - name: Install dependencies
         run: npm ci
+
       - name: Run unit tests
         run: npm test
+
       - name: Lint
         run: npm run lint
+
       - name: Type check
         run: npx tsc -b --pretty false
+
       - name: Production build
         run: npm run build
+
+  promote:
+    name: Auto merge develop to main
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Promote develop to main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main develop
+
+          CURRENT_DEVELOP=$(git rev-parse origin/develop)
+
+          if [ "$CURRENT_DEVELOP" != "$GITHUB_SHA" ]; then
+            echo "Develop changed during CI. Skipping outdated promotion."
+            exit 1
+          fi
+
+          git checkout -B main origin/main
+          git merge --ff-only "$GITHUB_SHA"
+
+          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin HEAD:main

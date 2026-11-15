@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Controller, useForm, type UseFormReturn, type UseFormSetError } from 'react-hook-form';
+import {
+    Controller,
+    useForm,
+    useWatch,
+    type UseFormReturn,
+    type UseFormSetError,
+} from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -110,12 +116,11 @@ function ProductDetailsFields({
         control,
         register,
         setValue,
-        watch,
         formState: { errors },
     } = form;
 
-    const categoryId = watch('category_id');
-    const brandId = watch('brand_id');
+    // Subscribe here: watch() through the stable form prop can be cached by React Compiler.
+    const [categoryId, brandId] = useWatch({ control, name: ['category_id', 'brand_id'] });
 
     const categoryItems = useMemo(
         () =>

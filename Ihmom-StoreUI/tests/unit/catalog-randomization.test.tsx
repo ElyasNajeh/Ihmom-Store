@@ -26,6 +26,8 @@ afterEach(() => {
 
 describe('persistent catalog seed', () => {
     it('generates 16 crypto bytes, persists, and reads storage only once', async () => {
+        const now = 1_800_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(now);
         const read = vi.spyOn(Storage.prototype, 'getItem');
         const generate = vi.spyOn(crypto, 'getRandomValues');
         const { getCatalogSeed } = await import('@/features/catalog/utils/catalog-seed.ts');
@@ -35,7 +37,10 @@ describe('persistent catalog seed', () => {
         expect(generate.mock.calls[0][0]).toHaveLength(16);
         expect(getCatalogSeed()).toBe(value);
         expect(read).toHaveBeenCalledTimes(1);
-        expect(localStorage.getItem(CATALOG_SEED_STORAGE_KEY)).toBe(value);
+        expect(JSON.parse(localStorage.getItem(CATALOG_SEED_STORAGE_KEY)!)).toEqual({
+            seed: value,
+            expiresAt: now + 24 * 60 * 60 * 1000,
+        });
         vi.resetModules();
         const reloaded = await import('@/features/catalog/utils/catalog-seed.ts');
         expect(reloaded.getCatalogSeed()).toBe(value);
@@ -43,16 +48,32 @@ describe('persistent catalog seed', () => {
     });
 
     it('reuses valid stored seed and replaces invalid values', async () => {
-        localStorage.setItem(CATALOG_SEED_STORAGE_KEY, seed);
+        const now = 1_800_000_000_000;
+        vi.spyOn(Date, 'now').mockReturnValue(now);
+        localStorage.setItem(
+            CATALOG_SEED_STORAGE_KEY,
+            JSON.stringify({ seed, expiresAt: now + 1000 }),
+        );
         let utility = await import('@/features/catalog/utils/catalog-seed.ts');
         expect(utility.getCatalogSeed()).toBe(seed);
         expect(utility.isCatalogSeed(seed.toUpperCase())).toBe(false);
         expect(utility.isCatalogSeed(`${seed}\n`)).toBe(false);
-        vi.resetModules();
-        localStorage.setItem(CATALOG_SEED_STORAGE_KEY, 'invalid');
-        utility = await import('@/features/catalog/utils/catalog-seed.ts');
-        expect(utility.getCatalogSeed()).toMatch(/^[a-f0-9]{32}$/);
-        expect(localStorage.getItem(CATALOG_SEED_STORAGE_KEY)).toBe(utility.getCatalogSeed());
+        for (const invalid of [
+            'invalid',
+            seed, // legacy plain-string storage
+            JSON.stringify({ seed, expiresAt: now }), // expired boundary
+            JSON.stringify({ seed, expiresAt: 'invalid' }),
+        ]) {
+            vi.resetModules();
+            localStorage.setItem(CATALOG_SEED_STORAGE_KEY, invalid);
+            utility = await import('@/features/catalog/utils/catalog-seed.ts');
+            const replacement = utility.getCatalogSeed();
+            expect(replacement).toMatch(/^[a-f0-9]{32}$/);
+            expect(JSON.parse(localStorage.getItem(CATALOG_SEED_STORAGE_KEY)!)).toEqual({
+                seed: replacement,
+                expiresAt: now + 24 * 60 * 60 * 1000,
+            });
+        }
     });
 
     it('keeps module memory when storage access is blocked', async () => {

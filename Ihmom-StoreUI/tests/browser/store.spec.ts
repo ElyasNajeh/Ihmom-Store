@@ -17,9 +17,18 @@ test('category has one WebP image through upload, replacement and removal', asyn
     await expect(form).not.toBeVisible();
     await page.getByRole('button', { name: `Manage image: ${name}`, exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Category image', exact: true });
+    // A valid 2x2 PNG fixture, independent of production assets.
+    const image = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEklEQVR4nGOUqzjBwMDAxAAGAA/oAWIgQMaHAAAAAElFTkSuQmCC',
+        'base64',
+    );
     let previous: string | null = null;
     for (let index = 0; index < 2; index++) {
-        await dialog.locator('input[type="file"]').setInputFiles('public/favicon.png');
+        await dialog.locator('input[type="file"]').setInputFiles({
+            name: `category-${index}.png`,
+            mimeType: 'image/png',
+            buffer: image,
+        });
         const saved = page.waitForResponse(
             (r) => r.url().endsWith('/image') && r.request().method() === 'PUT',
         );
@@ -86,7 +95,7 @@ test('admin category and brand forms validate, save and refresh their lists', as
         await dialog.getByRole('button', { name: 'Create', exact: true }).click();
         expect((await saved).status()).toBe(201);
         await expect(dialog).not.toBeVisible();
-        await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+        await expect(page.getByText(name, { exact: true }).filter({ visible: true })).toBeVisible();
     }
 });
 

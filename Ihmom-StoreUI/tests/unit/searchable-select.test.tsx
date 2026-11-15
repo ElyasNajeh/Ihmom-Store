@@ -137,3 +137,39 @@ test('clearing resets the displayed label and calls onChange with undefined', ()
     expect(onChangeSpy).toHaveBeenCalledWith(undefined);
     expect(input.value).toBe('');
 });
+
+test('keyboard search selects the matching ID and closes the dropdown', async () => {
+    const onChangeSpy = vi.fn();
+    render(<ControlledSelect onChangeSpy={onChangeSpy} />);
+    const input = screen.getByRole('combobox', { name: 'Select category' }) as HTMLInputElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Open options' }));
+    fireEvent.change(input, { target: { value: 'Mouse' } });
+    await screen.findByRole('option', { name: 'Mouse Pads' });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(input.value).toBe('Mouse Pads'));
+    expect(onChangeSpy).toHaveBeenCalledWith('2');
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+});
+
+test('localized option labels update without changing the selected ID', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+        <SearchableSelect options={options} value="2" onChange={onChange} placeholder="Category" />,
+    );
+    const input = screen.getByRole('combobox', { name: 'Category' }) as HTMLInputElement;
+    expect(input.value).toBe('Mouse Pads');
+    rerender(
+        <SearchableSelect
+            options={options.map((option) => ({
+                ...option,
+                label: option.value === '2' ? 'لوحة ماوس' : option.label,
+            }))}
+            value="2"
+            onChange={onChange}
+            placeholder="Category"
+        />,
+    );
+    expect(input.value).toBe('لوحة ماوس');
+    expect(onChange).not.toHaveBeenCalled();
+});

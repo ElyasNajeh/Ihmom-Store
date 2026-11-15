@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import '@/i18n';
+import i18n from '@/i18n';
 import {
     ProductCreateForm,
     ProductEditForm,
@@ -33,7 +33,10 @@ const baseProduct: Product = {
     images: [],
 };
 
-afterEach(cleanup);
+afterEach(async () => {
+    cleanup();
+    await i18n.changeLanguage('en');
+});
 
 test('create form displays selected category and brand labels, toggles active switch, and submits payload', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
@@ -197,4 +200,43 @@ test('edit form resets fields and switch state when switching to another product
         expect(categoryInput.value).toBe('Accessories');
         expect(brandInput.value).toBe('Ihmom');
     });
+});
+
+test('edit selections resolve after option loading and localize without losing form IDs', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const { rerender } = render(
+        <ProductEditForm
+            product={baseProduct}
+            categories={[]}
+            brands={[]}
+            isSubmitting={false}
+            onSubmit={onSubmit}
+        />,
+    );
+    const categoryInput = document.getElementById('product-category') as HTMLInputElement;
+    const brandInput = document.getElementById('product-brand') as HTMLInputElement;
+    expect(categoryInput.value).toBe('');
+    expect(brandInput.value).toBe('');
+    rerender(
+        <ProductEditForm
+            product={baseProduct}
+            categories={categories}
+            brands={brands}
+            isSubmitting={false}
+            onSubmit={onSubmit}
+        />,
+    );
+    await waitFor(() => {
+        expect(categoryInput.value).toBe('Hookahs');
+        expect(brandInput.value).toBe('Q LM');
+    });
+    await act(() => i18n.changeLanguage('ar'));
+    expect(categoryInput.value).toBe(categories[0].name_ar);
+    expect(brandInput.value).toBe(brands[0].name_ar);
+    fireEvent.submit(categoryInput.closest('form') as HTMLFormElement);
+    await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({ category_id: 10, brand_id: 100 }),
+        ),
+    );
 });

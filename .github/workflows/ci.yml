@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -110,3 +111,63 @@ jobs:
           git merge --ff-only "$GITHUB_SHA"
 
           git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin HEAD:main
+
+  deploy:
+    name: Deploy Ihmom Store to VPS
+    needs: [promote]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST_KEY: ${{ secrets.VPS_HOST_KEY }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          printf '%s\n' "$VPS_HOST_KEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          test -s ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$VPS_USER@$VPS_HOST" \
+            "EXPECTED_SHA='$EXPECTED_SHA' bash -se" <<'EOF'
+          set -euo pipefail
+
+          cd /opt/ihmom-store
+
+          test -z "$(git status --porcelain)"
+
+          git fetch origin main
+
+          REMOTE_SHA=$(git rev-parse origin/main)
+
+          if [ "$REMOTE_SHA" != "$EXPECTED_SHA" ]; then
+            echo "Main does not match the tested commit. Aborting deployment."
+            exit 1
+          fi
+
+          git merge --ff-only origin/main
+
+          docker compose -f docker-compose.prod.yml up -d --build \
+            api notifications ui
+
+          docker compose -f docker-compose.prod.yml ps
+          EOF

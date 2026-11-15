@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -76,6 +77,10 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      # TEMPORARY: Intentional CI failure test
+      - name: Test CI failure
+        run: exit 1
 
   promote:
     name: Auto merge develop to main
